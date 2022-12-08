@@ -1,0 +1,1 @@
+java -jar grasscutter-3.3-dev.jar -debug

@@ -1,0 +1,68 @@
+# Compiled class file
+*.class
+
+#idea
+*.idea
+# Log file
+*.log
+
+# virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
+hs_err_pid*
+
+# Ignore Gradle project-specific cache directory
+.gradle
+
+# Ignore Gradle build output directory
+build/
+out/
+
+# Ignore Gradle properties
+gradle.properties
+
+# Eclipse
+.project
+.classpath
+.settings
+.metadata
+.properties
+bin/
+tmp/
+*.tmp
+*.bak
+*.swp
+*~.nib
+.loadpath
+.recommenders
+
+# VSCode
+.vscode
+
+# python
+__pycache__/
+
+# Grasscutter
+/proto/*
+/logs/*
+
+# Generated files
+/src/generated/*
+/src/main/java/emu/grasscutter/server/packet/send/*
+/src/main/java/emu/grasscutter/server/packet/recv/*
+!/src/main/java/emu/grasscutter/server/packet/send/Handler.java
+!/src/main/java/emu/grasscutter/server/packet/recv/Handler.java
+/tools/protojson2java/cmdIdList.py
+
+# Ignore temp generated files output directory
+/tools/proto2json/output
+
+/*.jar
+
+config.json
+
+BuildConfig.java
+
+# lombok
+/.apt_generated/
+
+# macOS
+.DS_Store
