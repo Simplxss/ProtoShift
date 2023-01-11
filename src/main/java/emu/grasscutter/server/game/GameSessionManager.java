@@ -1,9 +1,8 @@
 package emu.grasscutter.server.game;
 
-import emu.grasscutter.Grasscutter;
+import emu.grasscutter.ProtoShift;
 import emu.grasscutter.utils.Utils;
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.buffer.Unpooled;
 import io.netty.buffer.UnpooledByteBufAllocator;
 import io.netty.channel.DefaultEventLoop;
@@ -15,15 +14,13 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class GameSessionManager {
-    private static final Map<GameSession, EventLoop> selector;
+    private static final Map<GameSession, EventLoop> selector = new HashMap<>();
     private static final Map<Ukcp, GameSession> sessions = new HashMap<>();
-    private static final Map<GameSession, HandlerManager> handlerManager = new HashMap<>();
     private static final KcpListener listener = new KcpListener() {
-
         @Override
         public void onConnected(Ukcp ukcp) {
             int times = 0;
-            GameServer server = Grasscutter.getGameServer();
+            GameServer server = ProtoShift.getGameServer();
             while (server == null) {//Waiting server to establish
                 try {
                     Thread.sleep(1000);
@@ -33,28 +30,20 @@ public class GameSessionManager {
                     return;
                 }
                 if (times++ > 5) {
-                    Grasscutter.getLogger().error("Service is not available!");
+                    ProtoShift.getLogger().error("Service is not available!");
                     ukcp.close();
                     return;
                 }
-                server = Grasscutter.getGameServer();
+                server = ProtoShift.getGameServer();
 
             }
 
-            var allocator
-                    = Grasscutter.getConfig().server.game.kcpConfig.isPoolAllocator ?
-                    new PooledByteBufAllocator(!Grasscutter.getConfig().server.game.kcpConfig.isHeapAllocator) :
-                    new UnpooledByteBufAllocator(!Grasscutter.getConfig().server.game.kcpConfig.isHeapAllocator);
-
-            ukcp.setByteBufAllocator(allocator);
+            ukcp.setByteBufAllocator(new UnpooledByteBufAllocator(true));
 
             GameSession conversation = new GameSession(server);
 
             selector
                     .put(conversation, new DefaultEventLoop());
-
-            handlerManager
-                    .put(conversation, new HandlerManager(conversation));
 
             conversation.onConnected(new KcpTunnel() {
                 @Override
@@ -99,13 +88,12 @@ public class GameSessionManager {
                 try {
                     conversation.handleClose();
                 } catch (Exception ignored) {
-                    Grasscutter.getLogger().error("Error while closing conversation");
+                    ProtoShift.getLogger().error("Error while closing conversation");
                 } finally {
                     sessions.remove(ukcp);
 
                     selector.get(conversation).shutdownGracefully();
                     selector.remove(conversation);
-                    handlerManager.remove(conversation);
                 }
 
             }
@@ -116,19 +104,6 @@ public class GameSessionManager {
     public static Map<Ukcp, GameSession> getSessions() {
         return sessions;
     }
-
-    public static Map<GameSession, EventLoop> getLogicThreadGroup() {
-        return selector;
-    }
-
-    public static Map<GameSession, HandlerManager> getHandlerManager() {
-        return handlerManager;
-    }
-
-    static {
-        selector = new HashMap<>();
-    }
-
 
     public static KcpListener getListener() {
         return listener;

@@ -4,7 +4,7 @@ import java.security.KeyFactory;
 import java.security.PrivateKey;
 import java.security.spec.PKCS8EncodedKeySpec;
 
-import emu.grasscutter.Grasscutter;
+import emu.grasscutter.ProtoShift;
 
 public final class Crypto {
 
@@ -30,7 +30,7 @@ public final class Crypto {
 					.generatePrivate(new PKCS8EncodedKeySpec(FileUtils.readResource("/keys/OSCN_Pri.der")));
 		}
 		catch (Exception e) {
-			Grasscutter.getLogger().error("An error occurred while loading keys.", e);
+			ProtoShift.getLogger().error("An error occurred while loading keys.", e);
 		}
 	}
 
@@ -41,7 +41,7 @@ public final class Crypto {
 					packet[i] ^= key[i % key.length];
 				}
 			} catch (Exception e) {
-				Grasscutter.getLogger().error("Crypto error.", e);
+				ProtoShift.getLogger().error("Crypto error.", e);
 			}
 		}
 	}

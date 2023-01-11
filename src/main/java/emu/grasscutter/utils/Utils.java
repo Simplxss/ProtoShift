@@ -4,7 +4,7 @@ import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 
-import emu.grasscutter.Grasscutter;
+import emu.grasscutter.ProtoShift;
 import io.netty.buffer.ByteBuf;
 
 import javax.annotation.Nullable;
@@ -42,13 +42,6 @@ public final class Utils {
 	}
 
 	/**
-	 * Checks for required files and folders before startup.
-	 */
-	public static void startupCheck() {
-		ConfigContainer config = Grasscutter.getConfig();
-	}
-
-	/**
 	 * Retrieves a string from an input stream.
 	 * @param stream The input stream.
 	 * @return The string.
@@ -62,7 +55,7 @@ public final class Utils {
 				stringBuilder.append(line);
 			} stream.close();
 		} catch (IOException e) {
-			Grasscutter.getLogger().warn("Failed to read from input stream.");
+			ProtoShift.getLogger().warn("Failed to read from input stream.");
 		} catch (NullPointerException ignored) {
 			return "empty";
 		} return stringBuilder.toString();

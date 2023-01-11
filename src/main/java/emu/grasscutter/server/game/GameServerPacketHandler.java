@@ -1,10 +1,11 @@
 package emu.grasscutter.server.game;
 
 import com.google.protobuf.ByteString;
-import emu.grasscutter.Grasscutter;
+import emu.grasscutter.ProtoShift;
 import emu.grasscutter.net.packet.*;
 import emu.grasscutter.server.game.GameSession.SessionState;
 
+import emu.grasscutter.utils.ConfigContainer;
 import emu.grasscutter.utils.Crypto;
 import emu.grasscutter.utils.MT19937;
 import emu.grasscutter.utils.Utils;
@@ -17,9 +18,6 @@ import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
-
-import static emu.grasscutter.Configuration.SERVER;
-
 
 public final class GameServerPacketHandler {
     private static final Map<Integer, PacketHandler> newHandlers = new HashMap<>();
@@ -34,8 +32,8 @@ public final class GameServerPacketHandler {
         }
 
         // Debug
-        Grasscutter.getLogger().info("Registered newHandlers " + newHandlers.size() + " " + PacketHandler.class.getSimpleName() + "s");
-        Grasscutter.getLogger().info("Registered oldHandlers " + oldHandlers.size() + " " + PacketHandler.class.getSimpleName() + "s");
+        ProtoShift.getLogger().info("Registered newHandlers " + newHandlers.size() + " " + PacketHandler.class.getSimpleName() + "s");
+        ProtoShift.getLogger().info("Registered oldHandlers " + oldHandlers.size() + " " + PacketHandler.class.getSimpleName() + "s");
     }
 
     public static void registerPacketHandler(Class<? extends PacketHandler> handlerClass) {
@@ -58,10 +56,6 @@ public final class GameServerPacketHandler {
         }
     }
 
-    public static PacketHandler getHandler(PacketOpcodes opcode) {
-        return opcode.type == 1 ? newHandlers.get(opcode.value) : oldHandlers.get(opcode.value);
-    }
-
     public static void handlePacket(GameSession session, byte[] bytes, boolean fromServer) {
         int flag = (bytes[0] & 0xFF) << 8 | bytes[1] & 0xFF;
         boolean isUseDispatchKey;
@@ -81,7 +75,7 @@ public final class GameServerPacketHandler {
         //logPacket(packet);
         // Handle
         try {
-            boolean allDebug = SERVER.debugLevel == Grasscutter.ServerDebugMode.ALL;
+            boolean allDebug = ProtoShift.getConfig().server.debugLevel == ConfigContainer.ServerDebugMode.ALL;
             while (packet.readableBytes() > 0) {
                 // Length
                 if (packet.readableBytes() < 12) {
@@ -91,7 +85,7 @@ public final class GameServerPacketHandler {
                 int const1 = packet.readUnsignedShort();
                 if (const1 != 0x4567) {
                     if (allDebug) {
-                        Grasscutter.getLogger().error("Bad Data Package Received: got " + const1 + " ,expect 0x4567\n" + Utils.bytesToHex(bytes));
+                        ProtoShift.getLogger().error("Bad Data Package Received: got " + const1 + " ,expect 0x4567\n" + Utils.bytesToHex(bytes));
                     }
                     return; // Bad packet
                 }
@@ -108,29 +102,28 @@ public final class GameServerPacketHandler {
                 int const2 = packet.readUnsignedShort();
                 if (const2 != 0x89ab) {
                     if (allDebug) {
-                        Grasscutter.getLogger().error("Bad Data Package Received: got " + const2 + " ,expect 0x89ab\n" + Utils.bytesToHex(bytes));
+                        ProtoShift.getLogger().error("Bad Data Package Received: got " + const2 + " ,expect 0x89ab\n" + Utils.bytesToHex(bytes));
                     }
                     return; // Bad packet
                 }
                 // Handle
 
-                handle(session, new PacketOpcodes(opcode, fromServer ? 2 : 1), header, payload, isUseDispatchKey,
-                        Grasscutter.getConfig().server.game.tickWhenHandlePacket ? GameSessionManager.getHandlerManager().get(session) : null);
+                handle(session, new PacketOpcodes(opcode, fromServer ? 2 : 1), header, payload, isUseDispatchKey);
 
             }
         } catch (Exception e) {
-            Grasscutter.getLogger().error("Error handling packet: " + e.getMessage());
+            ProtoShift.getLogger().error("Error handling packet: " + e.getMessage());
         } finally {
             //byteBuf.release(); //Needn't
             packet.release();
         }
     }
 
-    public static void handle(GameSession session, PacketOpcodes opcode, byte[] header, byte[] payload, boolean isUseDispatchKey, HandlerManager handlers) {
+    public static void handle(GameSession session, PacketOpcodes opcode, byte[] header, byte[] payload, boolean isUseDispatchKey) {
         PacketHandler handler = (opcode.type == 1 ? newHandlers.get(opcode.value) : oldHandlers.get(opcode.value));
 
-        if (SERVER.debugLevel == Grasscutter.ServerDebugMode.ALL) {
-            Grasscutter.getLogger().info("Recv packet (" + opcode.value + ", " + opcode.type + "): " + PacketOpcodesUtil.getOpcodeName(opcode) + "\n"
+        if (ProtoShift.getConfig().server.debugLevel == ConfigContainer.ServerDebugMode.ALL) {
+            ProtoShift.getLogger().info("Recv packet (" + opcode.value + ", " + opcode.type + "): " + PacketOpcodesUtil.getOpcodeName(opcode) + "\n"
                     + Utils.bytesToHex(payload));
         }
 
@@ -188,26 +181,14 @@ public final class GameServerPacketHandler {
                     }
                 }
 
-                if (handlers == null
-                        || (opcode.type == 1 && opcode.value == PacketOpcodes.newOpcodes.GetPlayerTokenReq)
-                        || (opcode.type == 2 && opcode.value == PacketOpcodes.oldOpcodes.GetPlayerTokenRsp)
-                        || (opcode.type == 1 && opcode.value == PacketOpcodes.newOpcodes.SetPlayerBornDataReq)
-                        || (opcode.type == 2 && opcode.value == PacketOpcodes.oldOpcodes.SetPlayerBornDataRsp)
-                        || (opcode.type == 1 && opcode.value == PacketOpcodes.newOpcodes.PlayerLoginReq)
-                        || (opcode.type == 2 && opcode.value == PacketOpcodes.newOpcodes.PlayerLoginRsp)) {
-                    handler.handle(session, header, payload, isUseDispatchKey);
-                } else {
-                    if (handlers.getSession() == session) {
-                        handlers.getHandler().add(new Handler(session, opcode, header, payload, isUseDispatchKey, System.currentTimeMillis()));
-                    }
-                }
+                handler.handle(session, header, payload, isUseDispatchKey);
             } catch (Exception ex) {
                 ex.printStackTrace();
             }
             return; // Packet successfully handled
         }
 
-        Grasscutter.getLogger().error("Unhandled packet (" + opcode.value + ", " + opcode.type + "): " + PacketOpcodesUtil.getOpcodeName(opcode));
+        ProtoShift.getLogger().error("Unhandled packet (" + opcode.value + ", " + opcode.type + "): " + PacketOpcodesUtil.getOpcodeName(opcode));
 
     }
 }

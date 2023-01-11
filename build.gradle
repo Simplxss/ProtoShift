@@ -10,11 +10,10 @@ import org.gradle.plugins.ide.eclipse.model.SourceFolder
 
 buildscript {
     repositories {
-        mavenCentral()
+        maven { url "https://plugins.gradle.org/m2/" }
     }
     dependencies {
         classpath 'org.jetbrains.kotlin:kotlin-gradle-plugin:1.7.21'
-
     }
 }
 
@@ -53,28 +52,22 @@ java {
     withSourcesJar()
 }
 
-repositories {
-    gradlePluginPortal()
-    mavenCentral()
-    maven { url "https://plugins.gradle.org/m2/" }
-}
-
 dependencies {
     implementation fileTree(dir: 'lib', include: ['*.jar'])
 
-    implementation group: 'org.slf4j', name: 'slf4j-api', version: '2.0.3'
-    implementation group: 'ch.qos.logback', name: 'logback-core', version: '1.4.4'
-    implementation group: 'ch.qos.logback', name: 'logback-classic', version: '1.4.4'
+    implementation group: 'org.slf4j', name: 'slf4j-api', version: '2.0.5'
+    implementation group: 'ch.qos.logback', name: 'logback-core', version: '1.4.5'
+    implementation group: 'ch.qos.logback', name: 'logback-classic', version: '1.4.5'
 
     implementation group: 'org.jline', name: 'jline', version: '3.21.0'
     implementation group: 'org.jline', name: 'jline-terminal-jna', version: '3.21.0'
-    implementation group: 'net.java.dev.jna', name: 'jna', version: '5.10.0'
+    implementation group: 'net.java.dev.jna', name: 'jna', version: '5.12.1'
 
-    implementation group: 'io.netty', name: 'netty-all', version: '4.1.71.Final'
+    implementation group: 'io.netty', name: 'netty-all', version: '4.1.86.Final'
 
-    implementation group: 'com.google.code.gson', name: 'gson', version: '2.9.0'
-    implementation group: 'com.google.protobuf', name: 'protobuf-java', version: '3.21.7'
-    implementation group: 'com.google.protobuf', name: 'protobuf-java-util', version: '3.21.7'
+    implementation group: 'com.google.code.gson', name: 'gson', version: '2.10'
+    implementation group: 'com.google.protobuf', name: 'protobuf-java', version: '3.21.12'
+    implementation group: 'com.google.protobuf', name: 'protobuf-java-util', version: '3.21.12'
 
     implementation group: 'org.reflections', name: 'reflections', version: '0.10.2'
 
@@ -85,32 +78,28 @@ dependencies {
 
 }
 
-configurations.all {
+configurations.configureEach {
     exclude group: 'org.slf4j', module: 'slf4j'
 }
 
 application {
     // Define the main class for the application
-    mainClassName = 'emu.grasscutter.Grasscutter'
+    mainClassName = 'emu.grasscutter.ProtoShift'
 }
 
 
 jar {
-    exclude("main") // duplicated jar root main, very confusing
-    exclude("logback-test.xml")
-    exclude("*.proto")
+    exclude '*.proto'
 
     manifest {
-        attributes 'Main-Class': 'emu.grasscutter.Grasscutter'
+        attributes 'Main-Class': 'emu.grasscutter.ProtoShift'
     }
-
 
     archiveBaseName = 'grasscutter'
     if (project.hasProperty('jarFilename')) {
-        archiveFileName = "${jarFilename}-${version}"
+        archiveFileName = "${jarFilename}.${archiveExtension}"
     }
 
-    zip64 = true
     from {
         configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
     }
@@ -122,66 +111,6 @@ jar {
     }
 
     destinationDirectory = file(".")
-
-}
-
-publishing {
-    publications {
-        mavenJava(MavenPublication) {
-            artifactId = 'grasscutter'
-            from components.java
-            versionMapping {
-                usage('java-api') {
-                    fromResolutionOf('runtimeClasspath')
-                }
-                usage('java-runtime') {
-                    fromResolutionResult()
-                }
-            }
-            pom {
-                name = 'Grasscutter'
-                description = 'A server software reimplementation for an anime game.'
-                url = 'https://github.com/Grasscutters/Grasscutter'
-                licenses {
-                    license {
-                        name = 'The Apache License, Version 2.0'
-                        url = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
-                    }
-                }
-                developers {
-                    developer {
-                        id = 'meledy'
-                        name = 'Meledy'
-                        email = 'meledy@xigam.tech' // not a real email kek
-                    }
-                    developer {
-                        id = 'magix'
-                        name = 'Magix'
-                        email = 'magix@xigam.tech'
-                    }
-                }
-                scm {
-                    connection = 'scm:git:git@github.com:Grasscutters/Grasscutter.git'
-                    developerConnection = 'scm:git:ssh://github.com:Grasscutters/Grasscutter.git'
-                    url = 'https://github.com/Grasscutters/Grasscutter'
-                }
-            }
-        }
-    }
-    repositories {
-        maven {
-            // change URLs to point to your repos, e.g. http://my.org/repo
-            def releasesRepoUrl = 'https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/'
-            def snapshotsRepoUrl = 'https://s01.oss.sonatype.org/content/repositories/snapshots/'
-            url = version.endsWith('SNAPSHOT') ? snapshotsRepoUrl : releasesRepoUrl
-
-            name = 'sonatype'
-            credentials(PasswordCredentials)
-        }
-    }
-}
-
-clean {
 }
 
 sourceSets {
@@ -209,13 +138,9 @@ idea {
 eclipse {
     classpath {
         file.whenMerged { cp ->
-            cp.entries.add(new SourceFolder('src/generated/main/java', null))
+            cp.entries.add( new SourceFolder('src/generated/main/java', null) )
         }
     }
-}
-
-signing {
-    sign publishing.publications.mavenJava
 }
 
 javadoc {
@@ -225,7 +150,7 @@ javadoc {
     }
 }
 
-task injectGitHash {
+tasks.register('injectGitHash') {
     def gitCommitHash = {
         try {
             return 'git rev-parse --verify --short HEAD'.execute().text.trim()
@@ -233,13 +158,13 @@ task injectGitHash {
             return "GIT_NOT_FOUND"
         }
     }
-    new File(projectDir, "src/main/java/emu/grasscutter/BuildConfig.java").text = """
-        package emu.grasscutter;
-        public class BuildConfig {
-                public static final String VERSION = \"${version}\";
-                public static final String GIT_HASH = \"${gitCommitHash()}\";
-        }
-    """
+    new File(projectDir, "src/main/java/emu/grasscutter/BuildConfig.java").text =
+"""package emu.grasscutter;
+public class BuildConfig {
+    public static final String VERSION = \"${version}\";
+    public static final String GIT_HASH = \"${gitCommitHash()}\";
+}
+"""
 }
 
 compileKotlin {
@@ -252,4 +177,8 @@ compileTestKotlin {
     kotlinOptions {
         jvmTarget = "17"
     }
+}
+
+repositories {
+    mavenCentral()
 }

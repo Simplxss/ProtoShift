@@ -1,10 +1,11 @@
 package emu.grasscutter.server.game;
 
-import emu.grasscutter.Grasscutter;
+import emu.grasscutter.ProtoShift;
 
 import emu.grasscutter.net.packet.BasePacket;
 import emu.grasscutter.net.packet.PacketOpcodesUtil;
 
+import emu.grasscutter.utils.ConfigContainer;
 import emu.grasscutter.utils.Crypto;
 import emu.grasscutter.utils.Utils;
 
@@ -17,12 +18,6 @@ import kcp.highway.KcpListener;
 import kcp.highway.Ukcp;
 
 import java.net.InetSocketAddress;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.TimeUnit;
-
-import static emu.grasscutter.Configuration.SERVER;
 
 public class GameSession {
     private final GameServer server;
@@ -70,12 +65,12 @@ public class GameSession {
                     try {
                         Thread.sleep(150);
                     } catch (InterruptedException e) {
-                        Grasscutter.getLogger().error("server not connected");
+                        ProtoShift.getLogger().error("server not connected");
                         return;
                     }
                 }
             }
-            Grasscutter.getLogger().error("server not connected");
+            ProtoShift.getLogger().error("server not connected");
         }
 
         public void close() {
@@ -84,33 +79,21 @@ public class GameSession {
 
         public KCP() {
             ChannelConfig channelConfig = new ChannelConfig();
-            var interval = Grasscutter.getConfig().server.game.kcpConfig.interval;
-            var resend = Grasscutter.getConfig().server.game.kcpConfig.resend;
-            var ackNoDelay = Grasscutter.getConfig().server.game.kcpConfig.ackNoDelay;
-            var fastFlush = Grasscutter.getConfig().server.game.kcpConfig.fastFlush;
-            var useConvChannel = Grasscutter.getConfig().server.game.kcpConfig.useConvChannel;
-            var conv = Grasscutter.getConfig().server.game.kcpConfig.conv;
-            var multiply = Grasscutter.getConfig().server.game.kcpConfig.multiply;
-
-            channelConfig.nodelay(true, interval, resend, true);
+            channelConfig.nodelay(true, ProtoShift.getConfig().server.game.kcpInterval, 2, true);
             channelConfig.setMtu(1400);
             channelConfig.setSndwnd(256);
             channelConfig.setRcvwnd(256);
             channelConfig.setTimeoutMillis(30 * 1000);//30s
-            channelConfig.setAckNoDelay(ackNoDelay);
-            channelConfig.setFastFlush(fastFlush);
-            channelConfig.setUseConvChannel(useConvChannel);
-            channelConfig.setConv(conv);
-            //channelConfig.setMultiply(multiply);
-
+            channelConfig.setUseConvChannel(true);
+            channelConfig.setAckNoDelay(false);
 
             KcpClient kcpClient = new KcpClient();
             kcpClient.init(channelConfig, this);
 
             try {
-                kcpClient.connect(new InetSocketAddress(Grasscutter.getConfig().server.game.remoteAddress, Grasscutter.getConfig().server.game.remotePort), channelConfig);
+                kcpClient.connect(new InetSocketAddress(ProtoShift.getConfig().server.game.remoteAddress, ProtoShift.getConfig().server.game.remotePort), channelConfig);
             } catch (Throwable var2) {
-                Grasscutter.getLogger().error("unable to connect to server");
+                ProtoShift.getLogger().error("unable to connect to server");
             }
 
         }
@@ -145,12 +128,12 @@ public class GameSession {
     public void send(BasePacket packet) {
         // Test
         if (packet.getOpcode().value <= 0) {
-            Grasscutter.getLogger().warn("Tried to send packet with missing cmd id!");
+            ProtoShift.getLogger().warn("Tried to send packet with missing cmd id!");
             return;
         }
 
-        if (SERVER.debugLevel == Grasscutter.ServerDebugMode.ALL) {
-            Grasscutter.getLogger().info("Send packet (" + packet.getOpcode().value + ", " + packet.getOpcode().type + "): " + PacketOpcodesUtil.getOpcodeName(packet.getOpcode()) + "\n"
+        if (ProtoShift.getConfig().server.debugLevel == ConfigContainer.ServerDebugMode.ALL) {
+            ProtoShift.getLogger().info("Send packet (" + packet.getOpcode().value + ", " + packet.getOpcode().type + "): " + PacketOpcodesUtil.getOpcodeName(packet.getOpcode()) + "\n"
                     + Utils.bytesToHex(packet.getData()));
         }
 
@@ -170,53 +153,6 @@ public class GameSession {
 
     public void onConnected(GameSessionManager.KcpTunnel tunnel) {
         this.tunnel = tunnel;
-        start();
-    }
-
-    public void start() {
-        // Schedule game loop.
-        long ms;
-        if (Grasscutter.getConfig().server.game.tick == 0) {
-            ms = 1L;
-        } else {
-            ms = 1000L / Grasscutter.getConfig().server.game.tick;
-        }
-
-        GameSessionManager.getLogicThreadGroup()
-                .get(this).scheduleAtFixedRate(() -> {
-                    try {
-                        onTick(this);
-                    } catch (Throwable ignore) {
-                    }
-                }, 5000L, ms, TimeUnit.MILLISECONDS);
-    }
-
-    private void onTick(GameSession session) {
-        List<Handler> usedHandler
-                = new ArrayList<>();
-        List<Handler> willHandler
-                = new ArrayList<>
-                (GameSessionManager.getHandlerManager().get(session).getHandler());
-
-        if (willHandler.size() > 0) {
-            willHandler.forEach(
-                    handler -> {
-                        if (handler == null) return;
-                        if (session.tunnelIsEstablished() && handler.getSession() == session) {
-                            try {
-                                GameServerPacketHandler.getHandler
-                                        (handler.getOpcode()).handle(session, handler.getHeader(), handler.getPayload(), handler.isUseDispatchKey());
-                            } catch (Exception e) {
-                                Grasscutter.getLogger()
-                                        .error("Error handling packet: " + handler.getOpcode().type + ", " + handler.getOpcode().value, e);
-                            }
-                            usedHandler.add(handler);
-                        }
-                    }
-            );
-        }
-        if (usedHandler.size() > 0)
-            usedHandler.forEach(handler -> GameSessionManager.getHandlerManager().get(session).getHandler().remove(handler));
     }
 
     public void handleClose() {
