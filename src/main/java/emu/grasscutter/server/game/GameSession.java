@@ -144,8 +144,10 @@ public class GameSession {
             switch (packet.getOpcode().type) {
                 case 1:
                     tunnel.writeData(data);
+                    break;
                 case 2:
                     KCP_client.send(data);
+                    break;
             }
         }
 
