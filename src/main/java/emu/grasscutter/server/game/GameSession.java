@@ -142,12 +142,8 @@ public class GameSession {
             Crypto.xor(data, packet.isUseDispatchKey ? Crypto.DISPATCH_KEY : encrypt_key, false);
 
             switch (packet.getOpcode().type) {
-                case 1:
-                    tunnel.writeData(data);
-                    break;
-                case 2:
-                    KCP_client.send(data);
-                    break;
+                case 1 -> tunnel.writeData(data);
+                case 2 -> KCP_client.send(data);
             }
         }
 

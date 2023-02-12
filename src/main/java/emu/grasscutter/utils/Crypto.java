@@ -50,7 +50,7 @@ public final class Crypto {
 		return switch (keyId) {
 			case 5 -> Crypto.CUR_OSCB_ENCRYPT_PRIVATEKEY;
 			case 4 -> Crypto.CUR_OSCN_ENCRYPT_PRIVATEKEY;
-			default -> Crypto.CUR_OSCN_ENCRYPT_PRIVATEKEY;
+			default -> throw new IllegalArgumentException("Invalid keyId: " + keyId);
 		};
 	}
 }
