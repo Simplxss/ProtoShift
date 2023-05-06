@@ -1,7 +1,8 @@
 import csv
+import sys
 
-NEWCMDID_PATH='..\\..\\proto\\newcmdid.csv'
-OLDCMDID_PATH='..\\..\\proto\\oldcmdid.csv'
+NEWCMDID_PATH=f'..\\..\\proto\\{sys.argv[1]}\\cmdid.csv'
+OLDCMDID_PATH=f'..\\..\\proto\\{sys.argv[2]}\\cmdid.csv'
 
 
 newcmdid = {}
@@ -30,8 +31,8 @@ reader = csv.reader(open(OLDCMDID_PATH))
 for line in reader:
     oldcmdid[line[0]] = line[1]
 
-with open('..\\..\\src\\main\\java\\emu\\grasscutter\\net\\packet\\PacketOpcodes.java', 'w') as file:
-    file.write('''package emu.grasscutter.net.packet;
+with open('..\\..\\src\\main\\java\\emu\\protoshift\\net\\packet\\PacketOpcodes.java', 'w') as file:
+    file.write('''package emu.protoshift.net.packet;
 
 
 public class PacketOpcodes {

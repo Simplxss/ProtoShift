@@ -18,7 +18,7 @@
   </appender>
 
   <logger name="org.reflections" level="OFF" />
-  <logger name="emu.grasscutter" level="${LOG_LEVEL}" />
+  <logger name="emu.protoshift" level="${LOG_LEVEL}" />
 
   <root level="INFO">
     <appender-ref ref="STDOUT" />

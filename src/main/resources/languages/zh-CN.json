@@ -49,17 +49,17 @@
       "router_error": "[Dispatch] 无法连接路由"
     },
     "status": {
-      "free_software": "Grasscutter 是免费开源软件，遵循 AGPL-3.0 license。如果你是付费购买的，那你已经被骗了。项目地址：https://github.com/Grasscutters/Grasscutter",
-      "starting": "正在启动 Grasscutter...",
+      "free_software": "Protoshift 是免费开源软件，遵循 AGPL-3.0 license。如果你是付费购买的，那你已经被骗了。项目地址：https://github.com/Protoshifts/Protoshift",
+      "starting": "正在启动 Protoshift...",
       "shutdown": "正在关闭...",
       "done": "加载完成！输入 \"help\" 查看命令列表",
       "error": "发生了一个错误。",
-      "welcome": "欢迎使用 Grasscutter！",
+      "welcome": "欢迎使用 Protoshift！",
       "run_mode_error": "无效的服务器运行模式：%s。",
-      "run_mode_help": "服务器运行模式必须为 'HYBRID'(混合)、'DISPATCH_ONLY'(仅 Dispatch) 或 'GAME_ONLY'(仅游戏)。Grasscutter 启动失败...",
+      "run_mode_help": "服务器运行模式必须为 'HYBRID'(混合)、'DISPATCH_ONLY'(仅 Dispatch) 或 'GAME_ONLY'(仅游戏)。Protoshift 启动失败...",
       "create_resources": "正在创建 resources 目录...",
       "resources_error": "请将 BinOutput 和 ExcelBinOutput 复制到 resources 目录。",
-      "version": "Grasscutter 版本：%s-%s",
+      "version": "Protoshift 版本：%s-%s",
       "game_version": "游戏版本：%s"
     }
   },

@@ -44,8 +44,8 @@ compileTestJava.options.encoding = "UTF-8"
 sourceCompatibility = JavaVersion.VERSION_17
 targetCompatibility = JavaVersion.VERSION_17
 
-group = 'xyz.grasscutters'
-version = '3.3-dev'
+group = 'xyz.protoshifts'
+version = 'alpha'
 
 java {
     withJavadocJar()
@@ -56,25 +56,25 @@ dependencies {
     implementation fileTree(dir: 'lib', include: ['*.jar'])
 
     implementation group: 'org.slf4j', name: 'slf4j-api', version: '2.0.5'
-    implementation group: 'ch.qos.logback', name: 'logback-core', version: '1.4.5'
-    implementation group: 'ch.qos.logback', name: 'logback-classic', version: '1.4.5'
+    implementation group: 'ch.qos.logback', name: 'logback-core', version: '1.4.6'
+    implementation group: 'ch.qos.logback', name: 'logback-classic', version: '1.4.6'
 
-    implementation group: 'org.jline', name: 'jline', version: '3.21.0'
-    implementation group: 'org.jline', name: 'jline-terminal-jna', version: '3.21.0'
+    implementation group: 'org.jline', name: 'jline', version: '3.23.0'
+    implementation group: 'org.jline', name: 'jline-terminal-jna', version: '3.23.0'
     implementation group: 'net.java.dev.jna', name: 'jna', version: '5.12.1'
 
-    implementation group: 'io.netty', name: 'netty-all', version: '4.1.86.Final'
+    implementation group: 'io.netty', name: 'netty-all', version: '4.1.90.Final'
 
-    implementation group: 'com.google.code.gson', name: 'gson', version: '2.10'
-    implementation group: 'com.google.protobuf', name: 'protobuf-java', version: '3.21.12'
-    implementation group: 'com.google.protobuf', name: 'protobuf-java-util', version: '3.21.12'
+    implementation group: 'com.google.code.gson', name: 'gson', version: '2.10.1'
+    implementation group: 'com.google.protobuf', name: 'protobuf-java', version: '3.22.2'
+    implementation group: 'com.google.protobuf', name: 'protobuf-java-util', version: '3.22.2'
 
     implementation group: 'org.reflections', name: 'reflections', version: '0.10.2'
 
-    implementation "org.jetbrains.kotlin:kotlin-stdlib:1.8.0-Beta"
+    implementation 'org.jetbrains.kotlin:kotlin-stdlib:1.8.20-RC'
 
-    compileOnly 'org.projectlombok:lombok:1.18.24'
-    annotationProcessor 'org.projectlombok:lombok:1.18.24'
+    compileOnly 'org.projectlombok:lombok:1.18.26'
+    annotationProcessor 'org.projectlombok:lombok:1.18.26'
 
 }
 
@@ -84,7 +84,7 @@ configurations.configureEach {
 
 application {
     // Define the main class for the application
-    mainClassName = 'emu.grasscutter.ProtoShift'
+    mainClassName = 'emu.protoshift.ProtoShift'
 }
 
 
@@ -92,10 +92,10 @@ jar {
     exclude '*.proto'
 
     manifest {
-        attributes 'Main-Class': 'emu.grasscutter.ProtoShift'
+        attributes 'Main-Class': 'emu.protoshift.ProtoShift'
     }
 
-    archiveBaseName = 'grasscutter'
+    archiveBaseName = 'protoshift'
     if (project.hasProperty('jarFilename')) {
         archiveFileName = "${jarFilename}.${archiveExtension}"
     }
@@ -119,9 +119,6 @@ sourceSets {
             // In addition to the default 'src/main/proto'
             srcDir 'src/generated'
         }
-        java {
-            srcDir 'src/java'
-        }
     }
 }
 
@@ -130,16 +127,7 @@ idea {
         // proto files and generated Java files are automatically added as
         // source dirs.
         // If you have additional sources, add them here:
-        sourceDirs += file("/proto/new/");
-        sourceDirs += file("/proto/old/");
-    }
-}
-
-eclipse {
-    classpath {
-        file.whenMerged { cp ->
-            cp.entries.add( new SourceFolder('src/generated/main/java', null) )
-        }
+        sourceDirs += file("/proto/");
     }
 }
 
@@ -158,8 +146,8 @@ tasks.register('injectGitHash') {
             return "GIT_NOT_FOUND"
         }
     }
-    new File(projectDir, "src/main/java/emu/grasscutter/BuildConfig.java").text =
-"""package emu.grasscutter;
+    new File(projectDir, "src/main/java/emu/protoshift/BuildConfig.java").text =
+"""package emu.protoshift;
 public class BuildConfig {
     public static final String VERSION = \"${version}\";
     public static final String GIT_HASH = \"${gitCommitHash()}\";

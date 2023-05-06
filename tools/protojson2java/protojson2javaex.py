@@ -7,8 +7,8 @@ import re
 
 PROTOJSON_NEW_DIR = '..\\proto2json\\output\\new\\'
 PROTOJSON_OLD_DIR = '..\\proto2json\\output\\old\\'
-OUTPUT_RECV_DIR = '..\\..\\src\\main\\java\\emu\\grasscutter\\server\\packet\\recv\\'
-OUTPUT_SEND_DIR = '..\\..\\src\\main\\java\\emu\\grasscutter\\server\\packet\\send\\'
+OUTPUT_RECV_DIR = '..\\..\\src\\main\\java\\emu\\protoshift\\server\\packet\\recv\\'
+OUTPUT_SEND_DIR = '..\\..\\src\\main\\java\\emu\\protoshift\\server\\packet\\send\\'
 
 oldobject_map = {}
 newobject_map = {}
@@ -180,7 +180,7 @@ def generate_oneof_parameter(oldparameter, newparameter, isrecv, datafrom):
 def generate_object_parameter(name, oldparameter, newparameter, isrecv, datafrom):
     dir = oldobject_map[name]['dir'] if isrecv else newobject_map[name]['dir']
     node = dir.split('.', 3)
-    s = 'emu.grasscutter.net.' + \
+    s = 'emu.protoshift.net.' + \
         ('oldproto' if isrecv else 'newproto') + \
         '.'+node[1]+'OuterClass.'+node[1] + \
         ('.'+node[2] if len(node) == 3 else '')+'.newBuilder()'
@@ -216,13 +216,13 @@ for i in oldcmdList:
         with open(OUTPUT_RECV_DIR+'Handler'+i+'.java', 'w', encoding='utf-8') as file:
             file.write(
                 '''
-package emu.grasscutter.server.packet.recv;
+package emu.protoshift.server.packet.recv;
 
-import emu.grasscutter.net.packet.BasePacket;
-import emu.grasscutter.net.packet.Opcodes;
-import emu.grasscutter.net.packet.PacketHandler;
-import emu.grasscutter.net.packet.PacketOpcodes;
-import emu.grasscutter.server.game.GameSession;
+import emu.protoshift.net.packet.BasePacket;
+import emu.protoshift.net.packet.Opcodes;
+import emu.protoshift.net.packet.PacketHandler;
+import emu.protoshift.net.packet.PacketOpcodes;
+import emu.protoshift.server.game.GameSession;
 
 import java.util.LinkedList;
 import java.util.HashMap;
@@ -231,7 +231,7 @@ import java.util.HashMap;
 public class Handler'''+i+''' extends PacketHandler {
     public static class Packet extends BasePacket {
 
-        public Packet(byte[] header, emu.grasscutter.net.newproto.'''+i+'''OuterClass.'''+i+''' req) {
+        public Packet(byte[] header, emu.protoshift.net.newproto.'''+i+'''OuterClass.'''+i+''' req) {
             super(header, new PacketOpcodes(PacketOpcodes.oldOpcodes.'''+i+''', 2));
         
             var q = '''+generate_object_parameter(i, oldobject_map[i], newobject_map[i], True, 'req')+''';
@@ -240,11 +240,11 @@ public class Handler'''+i+''' extends PacketHandler {
     }
     @Override
     public BasePacket Packet(byte[] payload) throws Exception {
-        return new Packet(new byte[0], emu.grasscutter.net.newproto.'''+i+'''OuterClass.'''+i+'''.parseFrom(payload));
+        return new Packet(new byte[0], emu.protoshift.net.newproto.'''+i+'''OuterClass.'''+i+'''.parseFrom(payload));
     }
     @Override
     public void handle(GameSession session, byte[] header, byte[] payload) throws Exception {
-        emu.grasscutter.net.newproto.'''+i+'''OuterClass.'''+i+''' req = emu.grasscutter.net.newproto.'''+i+'''OuterClass.'''+i+'''.parseFrom(payload);
+        emu.protoshift.net.newproto.'''+i+'''OuterClass.'''+i+''' req = emu.protoshift.net.newproto.'''+i+'''OuterClass.'''+i+'''.parseFrom(payload);
         // Auto template
         session.send(new Packet(header, req));
     }
@@ -255,13 +255,13 @@ public class Handler'''+i+''' extends PacketHandler {
         with open(OUTPUT_SEND_DIR+'Handler'+i+'.java', 'w', encoding='utf-8') as file:
             file.write(
                 '''
-package emu.grasscutter.server.packet.send;
+package emu.protoshift.server.packet.send;
 
-import emu.grasscutter.net.packet.BasePacket;
-import emu.grasscutter.net.packet.Opcodes;
-import emu.grasscutter.net.packet.PacketHandler;
-import emu.grasscutter.net.packet.PacketOpcodes;
-import emu.grasscutter.server.game.GameSession;
+import emu.protoshift.net.packet.BasePacket;
+import emu.protoshift.net.packet.Opcodes;
+import emu.protoshift.net.packet.PacketHandler;
+import emu.protoshift.net.packet.PacketOpcodes;
+import emu.protoshift.server.game.GameSession;
 
 import java.util.LinkedList;
 import java.util.HashMap;
@@ -270,7 +270,7 @@ import java.util.HashMap;
 public class Handler'''+i+''' extends PacketHandler {
     public static class Packet extends BasePacket {
 
-        public Packet(byte[] header, emu.grasscutter.net.oldproto.'''+i+'''OuterClass.'''+i+''' rsp) {
+        public Packet(byte[] header, emu.protoshift.net.oldproto.'''+i+'''OuterClass.'''+i+''' rsp) {
             super(header, new PacketOpcodes(PacketOpcodes.newOpcodes.'''+i+''', 1));
 
             var q = '''+generate_object_parameter(i, oldobject_map[i], newobject_map[i], False, 'rsp')+''';
@@ -279,11 +279,11 @@ public class Handler'''+i+''' extends PacketHandler {
     }
     @Override
     public BasePacket Packet(byte[] payload) throws Exception {
-        return new Packet(new byte[0], emu.grasscutter.net.oldproto.'''+i+'''OuterClass.'''+i+'''.parseFrom(payload));
+        return new Packet(new byte[0], emu.protoshift.net.oldproto.'''+i+'''OuterClass.'''+i+'''.parseFrom(payload));
     }
     @Override
     public void handle(GameSession session, byte[] header, byte[] payload) throws Exception {
-        emu.grasscutter.net.oldproto.'''+i+'''OuterClass.'''+i+''' rsp = emu.grasscutter.net.oldproto.'''+i+'''OuterClass.'''+i+'''.parseFrom(payload);
+        emu.protoshift.net.oldproto.'''+i+'''OuterClass.'''+i+''' rsp = emu.protoshift.net.oldproto.'''+i+'''OuterClass.'''+i+'''.parseFrom(payload);
         // Auto template
         session.send(new Packet(header, rsp));
     }

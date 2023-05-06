@@ -42,17 +42,17 @@
       "router_error": "[Dispatch] Unable to attach router."
     },
     "status": {
-      "free_software": "Grasscutter is FREE software. If you have paid for this, you may have been scammed. Homepage: https://github.com/Grasscutters/Grasscutter",
-      "starting": "Starting Grasscutter...",
+      "free_software": "Protoshift is FREE software. If you have paid for this, you may have been scammed. Homepage: https://github.com/Protoshifts/Protoshift",
+      "starting": "Starting Protoshift...",
       "shutdown": "Shutting down...",
       "done": "Done! For help, type \"help\"",
       "error": "An error occurred.",
-      "welcome": "Welcome to Grasscutter!",
+      "welcome": "Welcome to Protoshift!",
       "run_mode_error": "Invalid server run mode: %s.",
-      "run_mode_help": "Server run mode must be 'HYBRID', 'DISPATCH_ONLY', or 'GAME_ONLY'. Unable to start Grasscutter...",
+      "run_mode_help": "Server run mode must be 'HYBRID', 'DISPATCH_ONLY', or 'GAME_ONLY'. Unable to start Protoshift...",
       "create_resources": "Creating resources folder...",
       "resources_error": "Place a copy of 'BinOutput' and 'ExcelBinOutput' in the resources folder.",
-      "version": "Grasscutter version: %s-%s",
+      "version": "Protoshift version: %s-%s",
       "game_version": "Game version: %s"
     }
   },

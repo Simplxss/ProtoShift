@@ -8,7 +8,7 @@ Current can't be used because lake of proto files.
 
 1. download proto form [Sorapointa](https://github.com/Sorapointa/Sorapointa-Protos)
 
-2. put `proto` to `proto\new` or `proto\old` and rename `cmdid.csv` to `newcmdid.csv` or `oldcmdid.csv`
+2. put `protos` in `proto\{version}`(`proto\v3.2`)
 
 3. run `generateproto.bat` (or `generateprotoex.bat`)
 
