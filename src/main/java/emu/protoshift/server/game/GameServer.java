@@ -42,7 +42,7 @@ public final class GameServer extends KcpServer {
 
     public void onServerShutdown() {
         for (GameSession session : GameSessionManager.getSessions().values()) {
-            session.getSession().close();
+            session.close();
         }
     }
 }

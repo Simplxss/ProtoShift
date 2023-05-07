@@ -44,11 +44,7 @@ public class PacketOpcodes {
         this.value = value;
         this.type = type;
     }
-
-    // Empty
-    public static final int NONE = 0;
-    // Opcodes
-
+    
     public static class newOpcodes{
 ''' + generateJava(newcmdid) + '''
     }

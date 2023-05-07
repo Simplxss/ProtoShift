@@ -2,24 +2,19 @@ package emu.protoshift.server.game;
 
 import emu.protoshift.ProtoShift;
 import emu.protoshift.net.packet.*;
-import emu.protoshift.server.game.GameSession.SessionState;
+import emu.protoshift.server.injecter.*;
 
 import emu.protoshift.utils.ConfigContainer;
 import emu.protoshift.utils.Crypto;
-import emu.protoshift.utils.MT19937;
 import emu.protoshift.utils.Utils;
 
-import com.google.protobuf.ByteString;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
+
 import org.reflections.Reflections;
-import javax.crypto.Cipher;
-import java.nio.ByteBuffer;
+
 import java.util.Map;
-import java.util.Set;
-import java.util.List;
 import java.util.HashMap;
-import java.util.function.Consumer;
 
 public final class GameServerPacketHandler {
     private static final Map<Integer, PacketHandler> newHandlers = new HashMap<>();
@@ -27,9 +22,8 @@ public final class GameServerPacketHandler {
 
     static {
         Reflections reflections = new Reflections("emu.protoshift.server.packet");
-        Set<Class<? extends PacketHandler>> handlerClasses = reflections.getSubTypesOf(PacketHandler.class);
 
-        for (var obj : handlerClasses) {
+        for (var obj : reflections.getSubTypesOf(PacketHandler.class)) {
             registerPacketHandler(obj);
         }
 
@@ -58,36 +52,26 @@ public final class GameServerPacketHandler {
         }
     }
 
-    public static void handlePacket(GameSession session, byte[] bytes, boolean fromServer) {
-        int flag = (bytes[0] & 0xFF) << 8 | bytes[1] & 0xFF;
-        boolean isUseDispatchKey;
+    public static void handlePacket(GameSession session, byte[] bytes, boolean isFromServer) {
+        boolean isUseDispatchKey = (bytes[0] == (0x45 & Crypto.DISPATCH_KEY[0]) && bytes[1] == (0x67 & Crypto.DISPATCH_KEY[1]));
 
         // Decrypt and turn back into a packet
-        if (flag == 0x8c3f) {
+        if (isUseDispatchKey)
             Crypto.xor(bytes, Crypto.DISPATCH_KEY, false);
-            isUseDispatchKey = true;
-        } else {
+        else
             Crypto.xor(bytes, session.getEncryptKey(), false);
-            isUseDispatchKey = false;
-        }
 
         ByteBuf packet = Unpooled.wrappedBuffer(bytes);
 
-        // Log
-        //logPacket(packet);
         // Handle
         try {
             boolean allDebug = ProtoShift.getConfig().server.debugLevel == ConfigContainer.ServerDebugMode.ALL;
-            while (packet.readableBytes() > 0) {
-                // Length
-                if (packet.readableBytes() < 12) {
-                    return;
-                }
+            while (packet.readableBytes() > 12) {
                 // Packet sanity check
                 int const1 = packet.readUnsignedShort();
                 if (const1 != 0x4567) {
                     if (allDebug) {
-                        ProtoShift.getLogger().error("Bad Data Package Received: got " + const1 + " ,expect 0x4567\n" + Utils.bytesToHex(bytes));
+                        ProtoShift.getLogger().error("Bad Data Package Received from " + (isFromServer ? "server" : "client") + ": got " + const1 + " ,expect 0x4567\n" + Utils.bytesToHex(bytes));
                     }
                     return; // Bad packet
                 }
@@ -104,14 +88,12 @@ public final class GameServerPacketHandler {
                 int const2 = packet.readUnsignedShort();
                 if (const2 != 0x89ab) {
                     if (allDebug) {
-                        ProtoShift.getLogger().error("Bad Data Package Received: got " + const2 + " ,expect 0x89ab\n" + Utils.bytesToHex(bytes));
+                        ProtoShift.getLogger().error("Bad Data Package Received " + (isFromServer ? "server" : "client") + ": got " + const2 + " ,expect 0x89ab\n" + Utils.bytesToHex(bytes));
                     }
                     return; // Bad packet
                 }
                 // Handle
-
-                handle(session, new PacketOpcodes(opcode, fromServer ? 2 : 1), header, payload, isUseDispatchKey);
-
+                handle(session, new PacketOpcodes(opcode, isFromServer ? 2 : 1), header, payload, isUseDispatchKey);
             }
         } catch (Exception e) {
             ProtoShift.getLogger().error("Error handling packet: " + e.getMessage());
@@ -129,102 +111,57 @@ public final class GameServerPacketHandler {
                     + Utils.bytesToHex(payload));
         }
 
-
-        if (opcode.value == PacketOpcodes.NONE) return;
-
         if (handler != null) {
             try {
-                // Make sure session is ready for packets
-                SessionState state = session.getState();
+                switch (session.getState()) {
+                    case ACTIVE -> {
+                        if (opcode.type == 1) {
+                            if (opcode.value == PacketOpcodes.newOpcodes.UnionCmdNotify)
+                                payload = handleUnionCmd.onUnionCmdNotify(payload, newHandlers);
+                            else if (opcode.value == PacketOpcodes.newOpcodes.ClientAbilityChangeNotify)
+                                payload = handleAbility.onClientAbilityChangeNotify(payload);
+                            else if (opcode.value == PacketOpcodes.newOpcodes.AbilityInvocationsNotify)
+                                payload = handleAbility.onAbilityInvocationsNotify(payload);
+                            else if (opcode.value == PacketOpcodes.newOpcodes.CombatInvocationsNotify)
+                                payload = handleCombat.onCombatInvocationsNotify(payload);
 
-                if (!(state == SessionState.ACTIVE || (opcode.type == 1 && opcode.value == PacketOpcodes.newOpcodes.PingReq) || (opcode.type == 2 && opcode.value == PacketOpcodes.oldOpcodes.PingRsp))) {
-                    if (opcode.type == 1 && opcode.value == PacketOpcodes.newOpcodes.GetPlayerTokenReq) {
-                        if (state != SessionState.WAITING_FOR_TOKEN) return;
-
-                        var req = emu.protoshift.net.newproto.GetPlayerTokenReqOuterClass.GetPlayerTokenReq.parseFrom(payload);
-
-                        Cipher cipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");
-                        cipher.init(Cipher.DECRYPT_MODE, Crypto.CUR_SIGNING_KEY);
-
-                        var client_seed_encrypted = Utils.base64Decode(req.getClientRandKey());
-                        session.setClientSeed(ByteBuffer.wrap(cipher.doFinal(client_seed_encrypted)).getLong());
-                    } else if (opcode.type == 2 && opcode.value == PacketOpcodes.oldOpcodes.GetPlayerTokenRsp) {
-                        if (state != SessionState.WAITING_FOR_TOKEN) return;
-
-                        var rsp = emu.protoshift.net.oldproto.GetPlayerTokenRspOuterClass.GetPlayerTokenRsp.parseFrom(payload);
-
-                        if (rsp.getRetcode() == 0) {
-                            long encrypt_seed;
-                            if ((encrypt_seed = rsp.getSecretKeySeed()) == 0) {
-                                Cipher cipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");
-                                cipher.init(Cipher.DECRYPT_MODE, Crypto.getPriKey(rsp.getKeyId()));
-                                byte[] seed_bytes = cipher.doFinal(Utils.base64Decode(rsp.getServerRandKey()));
-                                encrypt_seed = ByteBuffer.wrap(seed_bytes).getLong() ^ session.getClientSeed();
+                            if (ProtoShift.getConfig().server.console.enabled) {
+                                if (opcode.value == PacketOpcodes.newOpcodes.PrivateChatReq)
+                                    handleChat.onPrivateChatReq(session, payload);
+                                else if (opcode.value == PacketOpcodes.oldOpcodes.PullPrivateChatReq)
+                                    handleChat.onPullPrivateChatReq(session, payload);
                             }
-
-                            var encrypt_key = MT19937.generateKey(encrypt_seed);
-
-                            session.setEncryptKey(encrypt_key);
-
-                            // Set session state
-                            session.setState(GameSession.SessionState.ACTIVE);
                         }
-                    } else return;
+                        if (opcode.type == 2) {
+                            if (ProtoShift.getConfig().server.console.enabled) {
+                                if (opcode.value == PacketOpcodes.oldOpcodes.PrivateChatRsp)
+                                    payload = handleChat.onPrivateChatRsp(session, payload);
+                                else if (opcode.value == PacketOpcodes.oldOpcodes.PullPrivateChatRsp)
+                                    payload = handleChat.onPullPrivateChatRsp(session, payload);
+                                else if (opcode.value == PacketOpcodes.oldOpcodes.PullRecentChatRsp)
+                                    payload = handleChat.onPullRecentChatRsp(session, payload);
+                                else if (opcode.value == PacketOpcodes.oldOpcodes.GetPlayerFriendListRsp)
+                                    payload = handleFriends.onGetPlayerFriendListRsp(payload);
+                            }
+                        }
+                    }
+                    case WAITING_FOR_TOKEN -> {
+                        if (opcode.type == 1 && opcode.value == PacketOpcodes.newOpcodes.GetPlayerTokenReq)
+                            handleLogin.onGetPlayerTokenReq(session, payload);
+                        else if (opcode.type == 2 && opcode.value == PacketOpcodes.oldOpcodes.GetPlayerTokenRsp)
+                            handleLogin.onGetPlayerTokenRsp(session, payload);
+                    }
+                    case INACTIVE -> {
+                        ProtoShift.getLogger()
+                                .error("Unhandled packet (" + opcode.value + ", " + opcode.type + "): " + PacketOpcodesUtil.getOpcodeName(opcode) + ", server is inactive!");
+                        return;
+                    }
                 }
-
-                Consumer<List<emu.protoshift.net.newproto.AbilityInvokeEntryOuterClass.AbilityInvokeEntry.Builder>> handleAbilityInvokes = Invokes -> {
-                    for (var Invoke : Invokes) {
-                        switch (Invoke.getArgumentType()) {
-                            case ABILITY_META_MODIFIER_CHANGE ->
-                                    Invoke.setAbilityData(emu.protoshift.net.newproto.AbilityMetaModifierChangeOuterClass.AbilityMetaModifierChange.newBuilder().build().toByteString());
-                            default -> {}
-                        }
-                    }
-                };
-
-                Consumer<List<emu.protoshift.net.newproto.CombatInvokeEntryOuterClass.CombatInvokeEntry.Builder>> handleCombatInvokes = Invokes -> {
-                    for (var Invoke : Invokes) {
-                        switch (Invoke.getArgumentType()) {
-                            case COMBAT_EVT_BEING_HIT ->
-                                    Invoke.setCombatData(emu.protoshift.net.newproto.EvtBeingHitInfoOuterClass.EvtBeingHitInfo.newBuilder().build().toByteString());
-                            default -> {}
-                        }
-                    }
-                };
-
-                if (opcode.type == 1 && opcode.value == PacketOpcodes.newOpcodes.UnionCmdNotify) {
-                    var req = emu.protoshift.net.newproto.UnionCmdNotifyOuterClass.UnionCmdNotify.newBuilder();
-                    req.mergeFrom(payload);
-                    for (var cmd : req.getCmdListBuilderList()) {
-                        BasePacket new_packet = newHandlers.get(cmd.getMessageId()).Packet(cmd.getBody().toByteArray());
-                        cmd.setBody(ByteString.copyFrom(new_packet.getData()));
-                    }
-                    payload = req.build().toByteArray();
-                } else if (opcode.type == 1 && opcode.value == PacketOpcodes.newOpcodes.ClientAbilityChangeNotify) {
-                    var req = emu.protoshift.net.newproto.ClientAbilityChangeNotifyOuterClass.ClientAbilityChangeNotify.newBuilder();
-                    req.mergeFrom(payload);
-                    handleAbilityInvokes.accept(req.getInvokesBuilderList());
-                    payload = req.build().toByteArray();
-                } else if (opcode.type == 1 && opcode.value == PacketOpcodes.newOpcodes.AbilityInvocationsNotify) {
-                    var req = emu.protoshift.net.newproto.AbilityInvocationsNotifyOuterClass.AbilityInvocationsNotify.newBuilder();
-                    req.mergeFrom(payload);
-                    handleAbilityInvokes.accept(req.getInvokesBuilderList());
-                    payload = req.build().toByteArray();
-                } else if (opcode.type == 1 && opcode.value == PacketOpcodes.newOpcodes.CombatInvocationsNotify) {
-                    var req = emu.protoshift.net.newproto.CombatInvocationsNotifyOuterClass.CombatInvocationsNotify.newBuilder();
-                    req.mergeFrom(payload);
-                    handleCombatInvokes.accept(req.getInvokeListBuilderList());
-                    payload = req.build().toByteArray();
-                }
-
                 handler.handle(session, header, payload, isUseDispatchKey);
             } catch (Exception ex) {
                 ex.printStackTrace();
             }
-            return; // Packet successfully handled
-        }
-
-        ProtoShift.getLogger().error("Unhandled packet (" + opcode.value + ", " + opcode.type + "): " + PacketOpcodesUtil.getOpcodeName(opcode));
-
+        } else ProtoShift.getLogger()
+                .error("packet (" + opcode.value + ", " + opcode.type + "): " + PacketOpcodesUtil.getOpcodeName(opcode) + " don't have handler!");
     }
 }

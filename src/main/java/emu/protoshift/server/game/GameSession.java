@@ -17,17 +17,32 @@ import kcp.highway.KcpClient;
 import kcp.highway.KcpListener;
 import kcp.highway.Ukcp;
 
+import lombok.Getter;
+import lombok.Setter;
+
 import java.net.InetSocketAddress;
 
 public class GameSession {
-    private final GameServer server;
+
+    @Getter @Setter
+    private int uid;
+
+    @Getter @Setter
+    private long clientSeed;
+
+    @Getter @Setter
+    boolean isOnHandleConsoleCmd;
+
+    @Getter @Setter
+    boolean isOnHandlePullConsoleChat;
+
     private GameSessionManager.KcpTunnel tunnel;
 
+    @Getter @Setter
     private SessionState state;
 
-    private long ClientSeed;
-
-    private byte[] encrypt_key;
+    @Getter @Setter
+    private byte[] encryptKey;
 
     private final KCP KCP_client = new KCP();
 
@@ -91,7 +106,7 @@ public class GameSession {
             kcpClient.init(channelConfig, this);
 
             try {
-                kcpClient.connect(new InetSocketAddress(ProtoShift.getConfig().server.game.remoteAddress, ProtoShift.getConfig().server.game.remotePort), channelConfig);
+                kcpClient.connect(new InetSocketAddress(ProtoShift.getConfig().remote.gateserver.ip, ProtoShift.getConfig().remote.gateserver.port), channelConfig);
             } catch (Throwable var2) {
                 ProtoShift.getLogger().error("unable to connect to server");
             }
@@ -100,29 +115,12 @@ public class GameSession {
 
     }
 
-    public GameSession(GameServer server) {
-        this.server = server;
+    public GameSession() {
         this.state = SessionState.WAITING_FOR_TOKEN;
-    }
-
-    public GameSession getSession() {
-        return this;
-    }
-
-    public GameServer getServer() {
-        return server;
     }
 
     public boolean tunnelIsEstablished() {
         return tunnel != null;
-    }
-
-    public SessionState getState() {
-        return state;
-    }
-
-    public void setState(SessionState state) {
-        this.state = state;
     }
 
     public void send(BasePacket packet) {
@@ -139,7 +137,7 @@ public class GameSession {
 
         if (tunnelIsEstablished()) {
             var data = packet.build();
-            Crypto.xor(data, packet.isUseDispatchKey ? Crypto.DISPATCH_KEY : encrypt_key, false);
+            Crypto.xor(data, packet.isUseDispatchKey ? Crypto.DISPATCH_KEY : encryptKey, false);
 
             switch (packet.getOpcode().type) {
                 case 1 -> tunnel.writeData(data);
@@ -160,32 +158,11 @@ public class GameSession {
         tunnel = null;
     }
 
-    public void setClientSeed(long ClientSeed) {
-        this.ClientSeed = ClientSeed;
-    }
-
-    public long getClientSeed() {
-        return this.ClientSeed;
-    }
-
-    public void setEncryptKey(byte[] encrypt_key) {
-        this.encrypt_key = encrypt_key;
-    }
-
-    public byte[] getEncryptKey() {
-        return this.encrypt_key;
-    }
-
     public void close() {
-        if (tunnel == null)
-            return;
-
-        tunnel.close();
-        KCP_client.close();
-    }
-
-    public boolean isActive() {
-        return getState() == SessionState.ACTIVE;
+        if (tunnel != null) {
+            tunnel.close();
+            KCP_client.close();
+        }
     }
 
     public enum SessionState {

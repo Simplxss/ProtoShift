@@ -40,10 +40,9 @@ public class GameSessionManager {
 
             ukcp.setByteBufAllocator(new UnpooledByteBufAllocator(true));
 
-            GameSession conversation = new GameSession(server);
+            GameSession conversation = new GameSession();
 
-            selector
-                    .put(conversation, new DefaultEventLoop());
+            selector.put(conversation, new DefaultEventLoop());
 
             conversation.onConnected(new KcpTunnel() {
                 @Override

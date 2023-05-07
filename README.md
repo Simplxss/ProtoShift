@@ -6,7 +6,7 @@ Current can't be used because lake of proto files.
 
 # Build
 
-1. download proto form [Sorapointa](https://github.com/Sorapointa/Sorapointa-Protos)
+1. get protos.
 
 2. put `protos` in `proto\{version}`(`proto\v3.2`)
 

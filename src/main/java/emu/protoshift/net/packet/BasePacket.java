@@ -5,11 +5,16 @@ import java.io.IOException;
 
 import com.google.protobuf.GeneratedMessageV3;
 
+import lombok.Getter;
+
 public class BasePacket {
     private static final int const1 = 17767; // 0x4567
     private static final int const2 = -30293; // 0x89ab
+
+    @Getter
     private final PacketOpcodes opcode;
     private byte[] header;
+    @Getter
     private byte[] data;
     // Encryption
     public boolean isUseDispatchKey;
@@ -20,45 +25,24 @@ public class BasePacket {
         this.isUseDispatchKey = isUseDispatchKey;
     }
 
-    public PacketOpcodes getOpcode() {
-        return this.opcode;
-    }
-
-    public byte[] getHeader() {
-        return this.header;
-    }
-
-    public byte[] getData() {
-        return this.data;
-    }
-
-    public void setData(byte[] data) {
-        this.data = data;
-    }
-
     public void setData(GeneratedMessageV3 proto) {
         this.data = proto.toByteArray();
     }
 
-    @SuppressWarnings("rawtypes")
-    public void setData(GeneratedMessageV3.Builder proto) {
-        this.data = proto.build().toByteArray();
-    }
-
     public byte[] build() {
-        if (this.getHeader() == null) {
-            this.header = new byte[0];
+        if (header == null) {
+            header = new byte[0];
         }
-        if (this.getData() == null) {
-            this.data = new byte[0];
+        if (data == null) {
+            data = new byte[0];
         }
-        ByteArrayOutputStream baos = new ByteArrayOutputStream(2 + 2 + 2 + 4 + this.getHeader().length + this.getData().length + 2);
+        ByteArrayOutputStream baos = new ByteArrayOutputStream(2 + 2 + 2 + 4 + header.length + data.length + 2);
         this.writeUint16(baos, const1);
-        this.writeUint16(baos, this.opcode.value);
-        this.writeUint16(baos, this.header.length);
-        this.writeUint32(baos, this.data.length);
-        this.writeBytes(baos, this.header);
-        this.writeBytes(baos, this.data);
+        this.writeUint16(baos, opcode.value);
+        this.writeUint16(baos, header.length);
+        this.writeUint32(baos, data.length);
+        this.writeBytes(baos, header);
+        this.writeBytes(baos, data);
         this.writeUint16(baos, const2);
         return baos.toByteArray();
     }
