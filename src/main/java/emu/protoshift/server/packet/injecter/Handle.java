@@ -24,6 +24,8 @@ public class Handle {
                             HandleChat.onPrivateChatReq(session, payload);
                         else if (opcode.value == PacketOpcodes.newOpcodes.PullPrivateChatReq)
                             HandleChat.onPullPrivateChatReq(session, payload);
+                        else if (opcode.value == PacketOpcodes.newOpcodes.MarkMapReq)
+                            HandleMap.onMarkMapReq(session, payload);
                     }
                 } else if (opcode.type == 2) {
                     if (ProtoShift.getConfig().server.console.enabled) {

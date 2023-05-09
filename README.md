@@ -2,22 +2,22 @@
 
 A proto translater tool for a certain anime game.
 
-Current can't be used because lake of proto files.
+Some feature are broken due to lake of proto files.
 
 # Build
 
-1. get protos.
+1. get protos for everywhere.
 
-2. put `protos` in `proto\{version}`(`proto\v3.2`)
+2. put `cmdid.csv` in `proto\v?.?.?\cmdid.csv`
 
-3. run `generateproto.bat` (or `generateprotoex.bat`)
+3. put `protos` in `proto\v?.?.?\proto\*.proto`
 
-4. run `gradlew-jar.bat`
+4. run `generateproto.bat`
+
+5. run `gradlew-jar.bat`
 
 # Run
 
-1. run `debug.bat` (or `debug.sh`)
+1. edit `remote` in `config.json`
 
-2. edit `remoteAddress` in `config.json`
-
-3. run `debug.bat` (or `debug.sh`)
+2. run `start.bat`

@@ -1,8 +1,5 @@
 package emu.protoshift.server.packet.injecter;
 
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
-
 import emu.protoshift.ProtoShift;
 
 import emu.protoshift.net.newproto.PrivateChatNotifyOuterClass;
@@ -15,14 +12,10 @@ import emu.protoshift.net.oldproto.PullRecentChatRspOuterClass;
 
 import emu.protoshift.net.packet.BasePacket;
 import emu.protoshift.net.packet.PacketOpcodes;
+
 import emu.protoshift.server.game.GameSession;
+import emu.protoshift.server.muipserver.console;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
-import java.net.URL;
-
-import java.nio.charset.StandardCharsets;
 import java.util.Date;
 
 public class HandleChat {
@@ -46,22 +39,7 @@ public class HandleChat {
                         .build());
                 session.send(packet);
 
-                var cmd = req.getText();
-                URL url = new URL(ProtoShift.getConfig().remote.muipserver.address + "?cmd=1116&uid=" + session.getUid() + "&msg=" + cmd + "&region=" + ProtoShift.getConfig().remote.muipserver.region + "&ticket=YSGM@" + new Date().getTime());
-                var connection = (HttpURLConnection) url.openConnection();
-
-                String response;
-                if (connection.getResponseCode() == 200) {
-                    var in = new BufferedReader(new InputStreamReader(connection.getInputStream(), StandardCharsets.UTF_8));
-                    JsonObject jsonObject = JsonParser.parseReader(in).getAsJsonObject();
-                    response = "retcode: " + jsonObject.get("retcode").getAsString() + "\n";
-                    if (jsonObject.has("data"))
-                        response += "retmsg: " + jsonObject.getAsJsonObject("data").get("retmsg").getAsString();
-                    else
-                        response += "msg: " + jsonObject.get("msg").getAsString();
-                } else {
-                    response = "HTTP Error, Code: " + connection.getResponseCode();
-                }
+                var response = console.exec(session.getUid(), req.getText());
 
                 packet.setData(PrivateChatNotifyOuterClass.PrivateChatNotify.newBuilder()
                         .setChatInfo(emu.protoshift.net.newproto.ChatInfoOuterClass.ChatInfo.newBuilder()

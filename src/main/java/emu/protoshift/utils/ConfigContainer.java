@@ -39,7 +39,7 @@ public class ConfigContainer {
     }
 
     public static class Console {
-        public boolean enabled = true;
+        public boolean enabled = false;
         public int consoleUid = 0;
         public String consoleNickname = "ProtoShift";
         public int consoleLevel = 60;
