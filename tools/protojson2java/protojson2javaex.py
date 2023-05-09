@@ -1,4 +1,5 @@
 from cmdIdList import oldcmdList, newcmdList
+from packetList import AbilityInvokeMap, CombatTypeMap
 
 from os import listdir, mkdir
 from os.path import exists
@@ -9,6 +10,8 @@ PROTOJSON_NEW_DIR = '..\\proto2json\\output\\new\\'
 PROTOJSON_OLD_DIR = '..\\proto2json\\output\\old\\'
 OUTPUT_RECV_DIR = '..\\..\\src\\main\\java\\emu\\protoshift\\server\\packet\\recv\\'
 OUTPUT_SEND_DIR = '..\\..\\src\\main\\java\\emu\\protoshift\\server\\packet\\send\\'
+
+OUTPUT_INJECTER_DIR = '..\\..\\src\\main\\java\\emu\\protoshift\\server\\packet\\injecter\\'
 
 oldobject_map = {}
 newobject_map = {}
@@ -215,13 +218,13 @@ for i in oldcmdList:
             continue
         with open(OUTPUT_RECV_DIR+'Handler'+i+'.java', 'w', encoding='utf-8') as file:
             file.write(
-                '''
-package emu.protoshift.server.packet.recv;
+'''package emu.protoshift.server.packet.recv;
 
 import emu.protoshift.net.packet.BasePacket;
 import emu.protoshift.net.packet.Opcodes;
 import emu.protoshift.net.packet.PacketHandler;
 import emu.protoshift.net.packet.PacketOpcodes;
+
 import emu.protoshift.server.game.GameSession;
 
 import java.util.LinkedList;
@@ -231,22 +234,23 @@ import java.util.HashMap;
 public class Handler'''+i+''' extends PacketHandler {
     public static class Packet extends BasePacket {
 
-        public Packet(byte[] header, emu.protoshift.net.newproto.'''+i+'''OuterClass.'''+i+''' req) {
-            super(header, new PacketOpcodes(PacketOpcodes.oldOpcodes.'''+i+''', 2));
-        
-            var q = '''+generate_object_parameter(i, oldobject_map[i], newobject_map[i], True, 'req')+''';
-            this.setData(q.toByteArray());
+        public Packet(byte[] header, boolean isUseDispatchKey, emu.protoshift.net.newproto.'''+i+'''OuterClass.'''+i+''' req) {
+            super(header, new PacketOpcodes(PacketOpcodes.oldOpcodes.'''+i+''', 2), isUseDispatchKey);
+
+            this.setData('''+generate_object_parameter(i, oldobject_map[i], newobject_map[i], True, 'req')+''');
         }
     }
+
     @Override
     public BasePacket Packet(byte[] payload) throws Exception {
-        return new Packet(new byte[0], emu.protoshift.net.newproto.'''+i+'''OuterClass.'''+i+'''.parseFrom(payload));
+        return new Packet(new byte[0], false, emu.protoshift.net.newproto.'''+i+'''OuterClass.'''+i+'''.parseFrom(payload));
     }
+
     @Override
-    public void handle(GameSession session, byte[] header, byte[] payload) throws Exception {
+    public void handle(GameSession session, byte[] header, byte[] payload, boolean isUseDispatchKey) throws Exception {
         emu.protoshift.net.newproto.'''+i+'''OuterClass.'''+i+''' req = emu.protoshift.net.newproto.'''+i+'''OuterClass.'''+i+'''.parseFrom(payload);
         // Auto template
-        session.send(new Packet(header, req));
+        session.send(new Packet(header, isUseDispatchKey, req));
     }
 
 }
@@ -254,8 +258,7 @@ public class Handler'''+i+''' extends PacketHandler {
             )
         with open(OUTPUT_SEND_DIR+'Handler'+i+'.java', 'w', encoding='utf-8') as file:
             file.write(
-                '''
-package emu.protoshift.server.packet.send;
+'''package emu.protoshift.server.packet.send;
 
 import emu.protoshift.net.packet.BasePacket;
 import emu.protoshift.net.packet.Opcodes;
@@ -270,24 +273,129 @@ import java.util.HashMap;
 public class Handler'''+i+''' extends PacketHandler {
     public static class Packet extends BasePacket {
 
-        public Packet(byte[] header, emu.protoshift.net.oldproto.'''+i+'''OuterClass.'''+i+''' rsp) {
-            super(header, new PacketOpcodes(PacketOpcodes.newOpcodes.'''+i+''', 1));
+        public Packet(byte[] header, boolean isUseDispatchKey, emu.protoshift.net.oldproto.'''+i+'''OuterClass.'''+i+''' rsp) {
+            super(header, new PacketOpcodes(PacketOpcodes.newOpcodes.'''+i+''', 1), isUseDispatchKey);
 
-            var q = '''+generate_object_parameter(i, oldobject_map[i], newobject_map[i], False, 'rsp')+''';
-            this.setData(q.toByteArray());
+            this.setData('''+generate_object_parameter(i, oldobject_map[i], newobject_map[i], False, 'rsp')+''');
         }
     }
+
     @Override
     public BasePacket Packet(byte[] payload) throws Exception {
-        return new Packet(new byte[0], emu.protoshift.net.oldproto.'''+i+'''OuterClass.'''+i+'''.parseFrom(payload));
-    }
-    @Override
-    public void handle(GameSession session, byte[] header, byte[] payload) throws Exception {
-        emu.protoshift.net.oldproto.'''+i+'''OuterClass.'''+i+''' rsp = emu.protoshift.net.oldproto.'''+i+'''OuterClass.'''+i+'''.parseFrom(payload);
-        // Auto template
-        session.send(new Packet(header, rsp));
+        return new Packet(new byte[0], false, emu.protoshift.net.oldproto.'''+i+'''OuterClass.'''+i+'''.parseFrom(payload));
     }
 
+    @Override
+    public void handle(GameSession session, byte[] header, byte[] payload, boolean isUseDispatchKey) throws Exception {
+        emu.protoshift.net.oldproto.'''+i+'''OuterClass.'''+i+''' rsp = emu.protoshift.net.oldproto.'''+i+'''OuterClass.'''+i+'''.parseFrom(payload);
+        session.send(new Packet(header, isUseDispatchKey, rsp));
+    }
+
+}
+'''
+            )
+
+def generate_invoke_parameter(map, type):
+    s=''
+    for key in map:
+        if map[key] not in oldobject_map or map[key] not in newobject_map:
+            continue
+        s+='''
+                    case '''+key+''' -> {
+                        var '''+type+'''Data = emu.protoshift.net.newproto.'''+map[key]+'''OuterClass.'''+map[key]+'''.parseFrom(invoke.get'''+type.capitalize()+'''Data());
+                        invoke.set'''+type.capitalize()+'''Data('''+generate_object_parameter(map[key], oldobject_map[map[key]], newobject_map[map[key]], True, type+'Data')+'''.toByteString());
+                    }'''
+    return s
+
+with open(OUTPUT_INJECTER_DIR+'HandleAbility.java', 'w', encoding='utf-8') as file:
+    file.write(
+'''package emu.protoshift.server.packet.injecter;
+
+import emu.protoshift.ProtoShift;
+
+import emu.protoshift.net.newproto.AbilityInvocationsNotifyOuterClass;
+import emu.protoshift.net.newproto.AbilityInvokeEntryOuterClass;
+import emu.protoshift.net.newproto.ClientAbilityChangeNotifyOuterClass;
+
+import java.util.LinkedList;
+import java.util.List;
+
+public class HandleAbility {
+    private static void handleAbilityInvokes(List<AbilityInvokeEntryOuterClass.AbilityInvokeEntry.Builder> invokes) {
+        try {
+            for (var invoke : invokes) {
+                switch (invoke.getArgumentType()) {'''+generate_invoke_parameter(AbilityInvokeMap,'ability')+'''
+                    default -> ProtoShift.getLogger().error("Unknown ability type: " + invoke.getArgumentType());
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static byte[] onClientAbilityChangeNotify(byte[] payload) {
+        ProtoShift.getLogger().debug("ClientAbilityChangeNotify injected");
+        var req = ClientAbilityChangeNotifyOuterClass.ClientAbilityChangeNotify.newBuilder();
+        try {
+            req.mergeFrom(payload);
+            handleAbilityInvokes(req.getInvokesBuilderList());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return req.build().toByteArray();
+    }
+
+    public static byte[] onAbilityInvocationsNotify(byte[] payload) {
+        ProtoShift.getLogger().debug("AbilityInvocationsNotify injected");
+        var req = AbilityInvocationsNotifyOuterClass.AbilityInvocationsNotify.newBuilder();
+        try {
+            req.mergeFrom(payload);
+            handleAbilityInvokes(req.getInvokesBuilderList());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return req.build().toByteArray();
+    }
+}
+'''
+            )
+    
+with open(OUTPUT_INJECTER_DIR+'HandleCombat.java', 'w', encoding='utf-8') as file:
+    file.write(
+'''package emu.protoshift.server.packet.injecter;
+
+import emu.protoshift.ProtoShift;
+
+import emu.protoshift.net.newproto.CombatInvocationsNotifyOuterClass;
+import emu.protoshift.net.newproto.CombatInvokeEntryOuterClass;
+
+import java.util.LinkedList;
+import java.util.List;
+
+public class HandleCombat {
+    private static void handleCombatInvokes(List<CombatInvokeEntryOuterClass.CombatInvokeEntry.Builder> invokes) {
+        try {
+            for (var invoke : invokes) {
+                switch (invoke.getArgumentType()) {'''+generate_invoke_parameter(CombatTypeMap, 'combat')+'''
+                    default -> ProtoShift.getLogger().error("Unknown ability type: " + invoke.getArgumentType());
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static byte[] onCombatInvocationsNotify(byte[] payload) {
+        ProtoShift.getLogger().debug("CombatInvocationsNotify injected");
+        var req = CombatInvocationsNotifyOuterClass.CombatInvocationsNotify.newBuilder();
+        try {
+            req.mergeFrom(payload);
+            handleCombatInvokes(req.getInvokeListBuilderList());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return req.build().toByteArray();
+    }
 }
 '''
             )

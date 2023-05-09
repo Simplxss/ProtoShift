@@ -3,11 +3,11 @@
 
 :: 0) Input version
 
-set /p NewVersion=Please input new proto version(v3.6):
-set /p OldVersion=Please input old proto version(v3.2):
+set /p NewVersion=Please input new proto version(v3.6.0):
+set /p OldVersion=Please input old proto version(v3.2.0):
 
-if "%NewVersion%"=="" set NewVersion=v3.6
-if "%OldVersion%"=="" set OldVersion=v3.2
+if "%NewVersion%"=="" set NewVersion=v3.6.0
+if "%OldVersion%"=="" set OldVersion=v3.2.0
 
 
 :: 1) Clean exist files

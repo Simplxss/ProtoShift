@@ -11,12 +11,11 @@ import org.jline.terminal.Terminal;
 import org.jline.terminal.TerminalBuilder;
 
 import ch.qos.logback.classic.Logger;
-
 import org.slf4j.LoggerFactory;
 
-import java.io.*;
-
-import static emu.protoshift.utils.Language.translate;
+import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
 
 public final class ProtoShift {
     @Getter
@@ -24,8 +23,6 @@ public final class ProtoShift {
 
     @Getter
     private static Language language;
-
-    public static final File configFile = new File("./config.json");
 
     @Getter
     private static GameServer gameServer;
@@ -39,8 +36,6 @@ public final class ProtoShift {
 
         // Load server configuration.
         loadConfig();
-        // Attempt to update configuration.
-        ConfigContainer.updateConfig();
 
         // Load translation files.
         loadLanguage();
@@ -58,12 +53,13 @@ public final class ProtoShift {
             }
             if (arg.equalsIgnoreCase("-debug")) {
                 config.server.debugLevel = ConfigContainer.ServerDebugMode.ALL;
+                logger.setLevel(ch.qos.logback.classic.Level.DEBUG);
             }
         }
 
         // Initialize server.
-        logger.info(translate("messages.status.starting"));
-        logger.info(translate("messages.status.version", BuildConfig.VERSION, BuildConfig.GIT_HASH));
+        logger.info(Language.translate("messages.status.starting"));
+        logger.info(Language.translate("messages.status.version", BuildConfig.VERSION, BuildConfig.GIT_HASH));
 
         // Create server instances.
         gameServer = new GameServer();
@@ -88,6 +84,7 @@ public final class ProtoShift {
      * Attempts to load the configuration from a file.
      */
     public static void loadConfig() {
+        var configFile = new File("./config.json");
         // Check if config.json exists. If not, we generate a new config.
         if (!configFile.exists()) {
             logger.info("config.json could not be found. Generating a default configuration ...");
@@ -110,10 +107,9 @@ public final class ProtoShift {
      * @param config The configuration to save, or null for a new one.
      */
     public static void saveConfig(ConfigContainer config) {
+        var configFile = new File("./config.json");
         try (FileWriter file = new FileWriter(configFile)) {
             file.write(JsonUtils.encode(config));
-        } catch (IOException ignored) {
-            logger.error("Unable to write to config file.");
         } catch (Exception e) {
             logger.error("Unable to save config file.", e);
         }
@@ -135,7 +131,7 @@ public final class ProtoShift {
                 .terminal(terminal)
                 .build();
 
-        logger.info(translate("messages.status.done"));
+        logger.info(Language.translate("messages.status.done"));
         boolean isLastInterrupted = false;
         while (true) {
             try {

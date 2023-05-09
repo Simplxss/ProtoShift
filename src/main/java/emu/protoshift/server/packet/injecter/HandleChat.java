@@ -1,4 +1,4 @@
-package emu.protoshift.server.injecter;
+package emu.protoshift.server.packet.injecter;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -25,8 +25,9 @@ import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
 
-public class handleChat {
+public class HandleChat {
     public static void onPrivateChatReq(GameSession session, byte[] payload) {
+        ProtoShift.getLogger().debug("PrivateChatReq injected");
         try {
             var req = PrivateChatReqOuterClass.PrivateChatReq.parseFrom(payload);
             if (req.getTargetUid() == ProtoShift.getConfig().server.console.consoleUid) {
@@ -78,6 +79,7 @@ public class handleChat {
     }
 
     public static void onPullPrivateChatReq(GameSession session, byte[] payload) {
+        ProtoShift.getLogger().debug("PullPrivateChatReq injected");
         try {
             var req = PullPrivateChatReqOuterClass.PullPrivateChatReq.parseFrom(payload);
             if (req.getTargetUid() == ProtoShift.getConfig().server.console.consoleUid)
@@ -88,6 +90,7 @@ public class handleChat {
     }
 
     public static byte[] onPrivateChatRsp(GameSession session, byte[] payload) {
+        ProtoShift.getLogger().debug("PrivateChatRsp injected");
         if (session.isOnHandleConsoleCmd()) {
             var rsp = PrivateChatRspOuterClass.PrivateChatRsp.newBuilder();
             try {
@@ -101,6 +104,7 @@ public class handleChat {
     }
 
     public static byte[] onPullPrivateChatRsp(GameSession session, byte[] payload) {
+        ProtoShift.getLogger().debug("PullPrivateChatRsp injected");
         if (session.isOnHandlePullConsoleChat()) {
             var rsp = PullPrivateChatRspOuterClass.PullPrivateChatRsp.newBuilder()
                     .addChatInfo(emu.protoshift.net.oldproto.ChatInfoOuterClass.ChatInfo.newBuilder()
@@ -116,6 +120,7 @@ public class handleChat {
     }
 
     public static byte[] onPullRecentChatRsp(GameSession session, byte[] payload) {
+        ProtoShift.getLogger().debug("PullRecentChatRsp injected");
         var rsp = PullRecentChatRspOuterClass.PullRecentChatRsp.newBuilder();
         try {
             rsp.mergeFrom(payload);

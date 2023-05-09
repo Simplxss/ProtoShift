@@ -1,4 +1,4 @@
-package emu.protoshift.server.injecter;
+package emu.protoshift.server.packet.injecter;
 
 import emu.protoshift.net.newproto.GetPlayerTokenReqOuterClass;
 import emu.protoshift.net.oldproto.GetPlayerTokenRspOuterClass;
@@ -12,7 +12,7 @@ import emu.protoshift.utils.Utils;
 import javax.crypto.Cipher;
 import java.nio.ByteBuffer;
 
-public class handleLogin {
+public class HandleLogin {
     public static void onGetPlayerTokenReq(GameSession session, byte[] payload) {
         try {
             var req = GetPlayerTokenReqOuterClass.GetPlayerTokenReq.parseFrom(payload);

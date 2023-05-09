@@ -1,4 +1,4 @@
-package emu.protoshift.server.injecter;
+package emu.protoshift.server.packet.injecter;
 
 import emu.protoshift.ProtoShift;
 import emu.protoshift.net.oldproto.GetPlayerFriendListRspOuterClass;
@@ -8,8 +8,9 @@ import emu.protoshift.net.oldproto.FriendOnlineStateOuterClass;
 import emu.protoshift.net.oldproto.PlatformTypeOuterClass;
 
 
-public class handleFriends {
+public class HandleFriends {
     public static byte[] onGetPlayerFriendListRsp(byte[] payload) {
+        ProtoShift.getLogger().debug("GetPlayerFriendListRsp injected");
         var rsp = GetPlayerFriendListRspOuterClass.GetPlayerFriendListRsp.newBuilder();
         try {
             rsp.mergeFrom(payload);
