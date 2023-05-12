@@ -24,24 +24,30 @@ import java.net.InetSocketAddress;
 
 public class GameSession {
 
-    @Getter @Setter
+    @Getter
+    @Setter
     private int uid;
 
-    @Getter @Setter
+    @Getter
+    @Setter
     private long clientSeed;
 
-    @Getter @Setter
+    @Getter
+    @Setter
     boolean isOnHandleConsoleCmd;
 
-    @Getter @Setter
+    @Getter
+    @Setter
     boolean isOnHandlePullConsoleChat;
 
     private GameSessionManager.KcpTunnel tunnel;
 
-    @Getter @Setter
-    private SessionState state;
+    @Getter
+    @Setter
+    private SessionState state = SessionState.WAITING_FOR_TOKEN;
 
-    @Getter @Setter
+    @Getter
+    @Setter
     private byte[] encryptKey;
 
     private final KCP KCP_client = new KCP();
@@ -51,6 +57,7 @@ public class GameSession {
 
         @Override
         public void onConnected(Ukcp ukcp) {
+            ProtoShift.getLogger().info("server connected: " + ukcp.user().getRemoteAddress());
             this.ukcp = ukcp;
         }
 
@@ -66,10 +73,15 @@ public class GameSession {
 
         @Override
         public void handleClose(Ukcp ukcp) {
+            ProtoShift.getLogger().info("server disconnected: " + ukcp.user().getRemoteAddress());
+            this.ukcp = null;
+            if (tunnel != null) {
+                tunnel.close();
+            }
+            GameSession.this.setState(SessionState.INACTIVE);
         }
 
         public void send(byte[] data) {
-
             for (int retry = 1; retry <= 3; retry++) {
                 if (ukcp != null) {
                     ByteBuf buf = Unpooled.wrappedBuffer(data);
@@ -89,38 +101,27 @@ public class GameSession {
         }
 
         public void close() {
-            ukcp.close();
+            if (ukcp != null)
+                ukcp.close();
         }
-
-        public KCP() {
-            ChannelConfig channelConfig = new ChannelConfig();
-            channelConfig.nodelay(true, ProtoShift.getConfig().server.game.kcpInterval, 2, true);
-            channelConfig.setMtu(1400);
-            channelConfig.setSndwnd(256);
-            channelConfig.setRcvwnd(256);
-            channelConfig.setTimeoutMillis(30 * 1000);//30s
-            channelConfig.setUseConvChannel(true);
-            channelConfig.setAckNoDelay(false);
-
-            KcpClient kcpClient = new KcpClient();
-            kcpClient.init(channelConfig, this);
-
-            try {
-                kcpClient.connect(new InetSocketAddress(ProtoShift.getConfig().remote.gateserver.ip, ProtoShift.getConfig().remote.gateserver.port), channelConfig);
-            } catch (Throwable var2) {
-                ProtoShift.getLogger().error("unable to connect to server");
-            }
-
-        }
-
     }
 
-    public GameSession() {
-        this.state = SessionState.WAITING_FOR_TOKEN;
-    }
+    public GameSession(GameSessionManager.KcpTunnel tunnel) {
+        this.tunnel = tunnel;
 
-    public boolean tunnelIsEstablished() {
-        return tunnel != null;
+        ChannelConfig channelConfig = new ChannelConfig();
+        channelConfig.nodelay(true, ProtoShift.getConfig().server.game.kcpInterval, 2, true);
+        channelConfig.setMtu(1400);
+        channelConfig.setSndwnd(256);
+        channelConfig.setRcvwnd(256);
+        channelConfig.setTimeoutMillis(30 * 1000);//30s
+        channelConfig.setUseConvChannel(true);
+        channelConfig.setAckNoDelay(false);
+
+        KcpClient kcpClient = new KcpClient();
+        kcpClient.init(channelConfig, KCP_client);
+
+        kcpClient.connect(new InetSocketAddress(ProtoShift.getConfig().remote.gateserver.ip, ProtoShift.getConfig().remote.gateserver.port), channelConfig);
     }
 
     public void send(BasePacket packet) {
@@ -135,7 +136,7 @@ public class GameSession {
                     + Utils.bytesToHex(packet.getData()));
         }
 
-        if (tunnelIsEstablished()) {
+        if (tunnel != null) {
             var data = packet.build();
             Crypto.xor(data, packet.isUseDispatchKey ? Crypto.DISPATCH_KEY : encryptKey, false);
 
@@ -144,11 +145,6 @@ public class GameSession {
                 case 2 -> KCP_client.send(data);
             }
         }
-
-    }
-
-    public void onConnected(GameSessionManager.KcpTunnel tunnel) {
-        this.tunnel = tunnel;
     }
 
     public void handleClose() {
@@ -161,8 +157,9 @@ public class GameSession {
     public void close() {
         if (tunnel != null) {
             tunnel.close();
-            KCP_client.close();
+            tunnel = null;
         }
+        KCP_client.close();
     }
 
     public enum SessionState {

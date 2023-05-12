@@ -2,6 +2,7 @@ package emu.protoshift.server.game;
 
 import emu.protoshift.ProtoShift;
 import emu.protoshift.utils.Utils;
+
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.buffer.UnpooledByteBufAllocator;
@@ -19,32 +20,10 @@ public class GameSessionManager {
     private static final KcpListener listener = new KcpListener() {
         @Override
         public void onConnected(Ukcp ukcp) {
-            int times = 0;
-            GameServer server = ProtoShift.getGameServer();
-            while (server == null) {//Waiting server to establish
-                try {
-                    Thread.sleep(1000);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                    ukcp.close();
-                    return;
-                }
-                if (times++ > 5) {
-                    ProtoShift.getLogger().error("Service is not available!");
-                    ukcp.close();
-                    return;
-                }
-                server = ProtoShift.getGameServer();
-
-            }
-
+            ProtoShift.getLogger().info("new connection from: " + ukcp.user().getRemoteAddress());
             ukcp.setByteBufAllocator(new UnpooledByteBufAllocator(true));
 
-            GameSession conversation = new GameSession();
-
-            selector.put(conversation, new DefaultEventLoop());
-
-            conversation.onConnected(new KcpTunnel() {
+            GameSession conversation = new GameSession(new KcpTunnel() {
                 @Override
                 public void writeData(byte[] bytes) {
                     ByteBuf buf = Unpooled.wrappedBuffer(bytes);
@@ -58,6 +37,7 @@ public class GameSessionManager {
                 }
             });
 
+            selector.put(conversation, new DefaultEventLoop());
             sessions.put(ukcp, conversation);
         }
 
@@ -82,6 +62,7 @@ public class GameSessionManager {
 
         @Override
         public void handleClose(Ukcp ukcp) {
+            ProtoShift.getLogger().info("client disconnected: " + ukcp.user().getRemoteAddress());
             GameSession conversation = sessions.get(ukcp);
             if (conversation != null) {
                 try {
