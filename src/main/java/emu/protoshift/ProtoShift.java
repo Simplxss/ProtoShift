@@ -1,6 +1,7 @@
 package emu.protoshift;
 
 import emu.protoshift.server.game.GameServer;
+
 import emu.protoshift.utils.*;
 
 import lombok.Getter;
@@ -135,7 +136,7 @@ public final class ProtoShift {
         boolean isLastInterrupted = false;
         while (true) {
             try {
-                consoleLineReader.readLine("> ");
+                consoleLineReader.readLine("");
             } catch (UserInterruptException e) {
                 if (!isLastInterrupted) {
                     isLastInterrupted = true;

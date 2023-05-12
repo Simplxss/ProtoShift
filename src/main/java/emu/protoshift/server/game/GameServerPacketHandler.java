@@ -20,7 +20,7 @@ public final class GameServerPacketHandler {
     public static final Map<Integer, PacketHandler> newHandlers = new HashMap<>();
     public static final Map<Integer, PacketHandler> oldHandlers = new HashMap<>();
 
-    static {
+    public static void init() {
         Reflections reflections = new Reflections("emu.protoshift.server.packet");
 
         for (var obj : reflections.getSubTypesOf(PacketHandler.class)) {
@@ -110,14 +110,21 @@ public final class GameServerPacketHandler {
 
         PacketHandler handler = (opcode.type == 1 ? newHandlers.get(opcode.value) : oldHandlers.get(opcode.value));
 
-        if (handler != null) {
-            try {
-                handler.handle(session, header, Handle.preHandle(session, opcode, payload), isUseDispatchKey);
-            } catch (IllegalStateException ignored) {
-            } catch (Exception ex) {
-                ex.printStackTrace();
-            }
-        } else ProtoShift.getLogger()
-                .error("packet (" + opcode.value + ", " + opcode.type + "): " + PacketOpcodesUtil.getOpcodeName(opcode) + " don't have handler!");
+        try{
+            var new_payload = Handle.preHandle(session, opcode, payload);
+
+            if (handler != null) {
+                try {
+                    handler.handle(session, header, new_payload, isUseDispatchKey);
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                }
+            } else ProtoShift.getLogger()
+                    .error("packet (" + opcode.value + ", " + opcode.type + "): " + PacketOpcodesUtil.getOpcodeName(opcode) + " don't have handler!");
+
+        } catch (IllegalStateException ignored) {
+            return;
+        }
+
     }
 }

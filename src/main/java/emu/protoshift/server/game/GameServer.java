@@ -32,7 +32,11 @@ public final class GameServer extends KcpServer {
             );
         }
 
+        // Initialize KCP server.
         this.init(GameSessionManager.getListener(), channelConfig, address);
+
+        // Initialize packet handlers.
+        GameServerPacketHandler.init();
 
         ProtoShift.getLogger().info(translate("messages.status.free_software"));
         ProtoShift.getLogger().info(translate("messages.game.port_bind", Integer.toString(address.getPort())));

@@ -12,7 +12,7 @@ import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
 
-public class console {
+public class Console {
     public static String exec(int uid, String cmd) {
         try {
             URL url = new URL(ProtoShift.getConfig().remote.muipserver.address + "?cmd=1116&uid=" + uid + "&msg=" + cmd + "&region=" + ProtoShift.getConfig().remote.muipserver.region + "&ticket=YSGM@" + new Date().getTime());

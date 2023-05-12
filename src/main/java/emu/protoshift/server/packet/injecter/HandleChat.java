@@ -14,7 +14,7 @@ import emu.protoshift.net.packet.BasePacket;
 import emu.protoshift.net.packet.PacketOpcodes;
 
 import emu.protoshift.server.game.GameSession;
-import emu.protoshift.server.muipserver.console;
+import emu.protoshift.server.muipserver.Console;
 
 import java.util.Date;
 
@@ -39,7 +39,7 @@ public class HandleChat {
                         .build());
                 session.send(packet);
 
-                var response = console.exec(session.getUid(), req.getText());
+                var response = Console.exec(session.getUid(), req.getText());
 
                 packet.setData(PrivateChatNotifyOuterClass.PrivateChatNotify.newBuilder()
                         .setChatInfo(emu.protoshift.net.newproto.ChatInfoOuterClass.ChatInfo.newBuilder()
