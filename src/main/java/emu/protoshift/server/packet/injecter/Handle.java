@@ -1,6 +1,7 @@
 package emu.protoshift.server.packet.injecter;
 
 import emu.protoshift.ProtoShift;
+import emu.protoshift.config.Configuration;
 import emu.protoshift.net.packet.PacketOpcodes;
 import emu.protoshift.net.packet.PacketOpcodesUtil;
 import emu.protoshift.server.game.GameSession;
@@ -19,7 +20,7 @@ public class Handle {
                     else if (opcode.value == PacketOpcodes.newOpcodes.CombatInvocationsNotify)
                         yield HandleCombat.onCombatInvocationsNotify(payload);
 
-                    if (ProtoShift.getConfig().server.console.enabled) {
+                    if (Configuration.CONSOLE.enabled) {
                         if (opcode.value == PacketOpcodes.newOpcodes.PrivateChatReq)
                             HandleChat.onPrivateChatReq(session, payload);
                         else if (opcode.value == PacketOpcodes.newOpcodes.PullPrivateChatReq)
@@ -28,7 +29,7 @@ public class Handle {
                             HandleMap.onMarkMapReq(session, payload);
                     }
                 } else if (opcode.type == 2) {
-                    if (ProtoShift.getConfig().server.console.enabled) {
+                    if (Configuration.CONSOLE.enabled) {
                         if (opcode.value == PacketOpcodes.oldOpcodes.PrivateChatRsp)
                             yield HandleChat.onPrivateChatRsp(session, payload);
                         else if (opcode.value == PacketOpcodes.oldOpcodes.PullPrivateChatRsp)

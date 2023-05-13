@@ -4,7 +4,7 @@ import emu.protoshift.ProtoShift;
 import emu.protoshift.net.packet.*;
 import emu.protoshift.server.packet.injecter.Handle;
 
-import emu.protoshift.utils.ConfigContainer;
+import emu.protoshift.config.Configuration;
 import emu.protoshift.utils.Crypto;
 import emu.protoshift.utils.Utils;
 
@@ -52,19 +52,14 @@ public final class GameServerPacketHandler {
     }
 
     public static void handlePacket(GameSession session, byte[] bytes, boolean isFromServer) {
-        boolean isUseDispatchKey = (bytes[0] == (byte) (0x45 ^ Crypto.DISPATCH_KEY[0]) && bytes[1] == (byte) (0x67 ^ Crypto.DISPATCH_KEY[1]));
-
         // Decrypt and turn back into a packet
-        if (isUseDispatchKey)
-            Crypto.xor(bytes, Crypto.DISPATCH_KEY, false);
-        else
-            Crypto.xor(bytes, session.getEncryptKey(), false);
-
+        boolean isUseDispatchKey = (bytes[0] == (byte) (0x45 ^ Crypto.DISPATCH_KEY[0]) && bytes[1] == (byte) (0x67 ^ Crypto.DISPATCH_KEY[1]));
+        Crypto.xor(bytes, isUseDispatchKey ? Crypto.DISPATCH_KEY : session.getEncryptKey());
         ByteBuf packet = Unpooled.wrappedBuffer(bytes);
 
         // Handle
         try {
-            boolean allDebug = ProtoShift.getConfig().server.debugLevel == ConfigContainer.ServerDebugMode.ALL;
+            boolean allDebug = Configuration.DEBUG_MODE_INFO == Configuration.DebugMode.ALL;
             while (packet.readableBytes() > 12) {
                 // Packet sanity check
                 int const1 = packet.readUnsignedShort();
@@ -97,13 +92,12 @@ public final class GameServerPacketHandler {
         } catch (Exception e) {
             ProtoShift.getLogger().error("Error handling packet: " + e.getMessage());
         } finally {
-            //byteBuf.release(); //Needn't
             packet.release();
         }
     }
 
     public static void handle(GameSession session, PacketOpcodes opcode, byte[] header, byte[] payload, boolean isUseDispatchKey) {
-        if (ProtoShift.getConfig().server.debugLevel == ConfigContainer.ServerDebugMode.ALL) {
+        if (Configuration.DEBUG_MODE_INFO == Configuration.DebugMode.ALL) {
             ProtoShift.getLogger().debug("Receive packet (" + opcode.value + ", " + opcode.type + "): " + PacketOpcodesUtil.getOpcodeName(opcode) + "\n"
                     + Utils.bytesToHex(payload));
         }

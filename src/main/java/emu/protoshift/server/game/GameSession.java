@@ -5,7 +5,7 @@ import emu.protoshift.ProtoShift;
 import emu.protoshift.net.packet.BasePacket;
 import emu.protoshift.net.packet.PacketOpcodesUtil;
 
-import emu.protoshift.utils.ConfigContainer;
+import emu.protoshift.config.Configuration;
 import emu.protoshift.utils.Crypto;
 import emu.protoshift.utils.Utils;
 
@@ -91,9 +91,7 @@ public class GameSession {
                 } else {
                     try {
                         Thread.sleep(150);
-                    } catch (InterruptedException e) {
-                        ProtoShift.getLogger().error("server not connected");
-                        return;
+                    } catch (InterruptedException ignored) {
                     }
                 }
             }
@@ -110,7 +108,7 @@ public class GameSession {
         this.tunnel = tunnel;
 
         ChannelConfig channelConfig = new ChannelConfig();
-        channelConfig.nodelay(true, ProtoShift.getConfig().server.game.kcpInterval, 2, true);
+        channelConfig.nodelay(true, Configuration.GAME.kcpInterval, 2, true);
         channelConfig.setMtu(1400);
         channelConfig.setSndwnd(256);
         channelConfig.setRcvwnd(256);
@@ -121,7 +119,7 @@ public class GameSession {
         KcpClient kcpClient = new KcpClient();
         kcpClient.init(channelConfig, KCP_client);
 
-        kcpClient.connect(new InetSocketAddress(ProtoShift.getConfig().remote.gateserver.ip, ProtoShift.getConfig().remote.gateserver.port), channelConfig);
+        kcpClient.connect(new InetSocketAddress(Configuration.GATE_SERVER.ip, Configuration.GATE_SERVER.port), channelConfig);
     }
 
     public void send(BasePacket packet) {
@@ -131,14 +129,14 @@ public class GameSession {
             return;
         }
 
-        if (ProtoShift.getConfig().server.debugLevel == ConfigContainer.ServerDebugMode.ALL) {
+        if (Configuration.DEBUG_MODE_INFO == Configuration.DebugMode.ALL) {
             ProtoShift.getLogger().debug("Send packet (" + packet.getOpcode().value + ", " + packet.getOpcode().type + "): " + PacketOpcodesUtil.getOpcodeName(packet.getOpcode()) + "\n"
                     + Utils.bytesToHex(packet.getData()));
         }
 
         if (tunnel != null) {
             var data = packet.build();
-            Crypto.xor(data, packet.isUseDispatchKey ? Crypto.DISPATCH_KEY : encryptKey, false);
+            Crypto.xor(data, packet.isUseDispatchKey ? Crypto.DISPATCH_KEY : encryptKey);
 
             switch (packet.getOpcode().type) {
                 case 1 -> tunnel.writeData(data);

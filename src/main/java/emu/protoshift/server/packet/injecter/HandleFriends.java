@@ -1,12 +1,13 @@
 package emu.protoshift.server.packet.injecter;
 
 import emu.protoshift.ProtoShift;
+import emu.protoshift.config.Configuration;
+
 import emu.protoshift.net.oldproto.GetPlayerFriendListRspOuterClass;
 import emu.protoshift.net.oldproto.FriendBriefOuterClass;
 import emu.protoshift.net.oldproto.ProfilePictureOuterClass;
 import emu.protoshift.net.oldproto.FriendOnlineStateOuterClass;
 import emu.protoshift.net.oldproto.PlatformTypeOuterClass;
-
 
 public class HandleFriends {
     public static byte[] onGetPlayerFriendListRsp(byte[] payload) {
@@ -15,15 +16,15 @@ public class HandleFriends {
         try {
             rsp.mergeFrom(payload);
             rsp.addFriendList(FriendBriefOuterClass.FriendBrief.newBuilder()
-                    .setUid(ProtoShift.getConfig().server.console.consoleUid)
-                    .setNickname(ProtoShift.getConfig().server.console.consoleNickname)
-                    .setLevel(ProtoShift.getConfig().server.console.consoleLevel)
-                    .setWorldLevel(ProtoShift.getConfig().server.console.consoleWorldLevel)
-                    .setSignature(ProtoShift.getConfig().server.console.consoleSignature)
-                    .setNameCardId(ProtoShift.getConfig().server.console.consoleNameCardId)
+                    .setUid(Configuration.CONSOLE.consoleUid)
+                    .setNickname(Configuration.CONSOLE.consoleNickname)
+                    .setLevel(Configuration.CONSOLE.consoleLevel)
+                    .setWorldLevel(Configuration.CONSOLE.consoleWorldLevel)
+                    .setSignature(Configuration.CONSOLE.consoleSignature)
+                    .setNameCardId(Configuration.CONSOLE.consoleNameCardId)
                     .setProfilePicture(ProfilePictureOuterClass.ProfilePicture.newBuilder()
-                            .setAvatarId(ProtoShift.getConfig().server.console.consoleAvatarId)
-                            .setCostumeId(ProtoShift.getConfig().server.console.consoleCostumeId)
+                            .setAvatarId(Configuration.CONSOLE.consoleAvatarId)
+                            .setCostumeId(Configuration.CONSOLE.consoleCostumeId)
                             .build())
                     .setIsGameSource(true)
                     .setOnlineState(FriendOnlineStateOuterClass.FriendOnlineState.FRIEND_ONLINE_STATE_ONLINE)

@@ -1,5 +1,8 @@
 package emu.protoshift;
 
+import emu.protoshift.config.ConfigContainer;
+import emu.protoshift.config.Configuration;
+
 import emu.protoshift.server.game.GameServer;
 
 import emu.protoshift.utils.*;
@@ -23,13 +26,9 @@ public final class ProtoShift {
     private static final Logger logger = (Logger) LoggerFactory.getLogger(ProtoShift.class);
 
     @Getter
-    private static Language language;
-
-    @Getter
     private static GameServer gameServer;
 
-    @Getter
-    private static ConfigContainer config;
+    public static ConfigContainer config;
 
     static {
         // Declare logback configuration.
@@ -37,9 +36,6 @@ public final class ProtoShift {
 
         // Load server configuration.
         loadConfig();
-
-        // Load translation files.
-        loadLanguage();
 
         // Load keys from buffers.
         Crypto.loadKeys();
@@ -53,28 +49,20 @@ public final class ProtoShift {
                 System.exit(0);
             }
             if (arg.equalsIgnoreCase("-debug")) {
-                config.server.debugLevel = ConfigContainer.ServerDebugMode.ALL;
+                Configuration.DEBUG_MODE_INFO = Configuration.DebugMode.ALL;
                 logger.setLevel(ch.qos.logback.classic.Level.DEBUG);
             }
         }
 
         // Initialize server.
-        logger.info(Language.translate("messages.status.starting"));
-        logger.info(Language.translate("messages.status.version", BuildConfig.VERSION, BuildConfig.GIT_HASH));
+        logger.info("Starting Protoshift...");
+        logger.info("Protoshift version: %s-%s".formatted(BuildConfig.VERSION, BuildConfig.GIT_HASH));
 
         // Create server instances.
         gameServer = new GameServer();
 
         // Open console.
         startConsole();
-    }
-
-    /*
-     * Methods for the language system component.
-     */
-
-    public static void loadLanguage() {
-        language = Language.getLanguage(Utils.getLanguageCode(config.language.language));
     }
 
     /*
@@ -132,7 +120,7 @@ public final class ProtoShift {
                 .terminal(terminal)
                 .build();
 
-        logger.info(Language.translate("messages.status.done"));
+        logger.info("Done!");
         boolean isLastInterrupted = false;
         while (true) {
             try {

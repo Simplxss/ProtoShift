@@ -2,8 +2,8 @@ package emu.protoshift.server.muipserver;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import emu.protoshift.ProtoShift;
 
+import emu.protoshift.config.Configuration;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -15,7 +15,7 @@ import java.util.Date;
 public class Console {
     public static String exec(int uid, String cmd) {
         try {
-            URL url = new URL(ProtoShift.getConfig().remote.muipserver.address + "?cmd=1116&uid=" + uid + "&msg=" + cmd + "&region=" + ProtoShift.getConfig().remote.muipserver.region + "&ticket=YSGM@" + new Date().getTime());
+            URL url = new URL(Configuration.MUIP_SERVER.address + "?cmd=1116&uid=" + uid + "&msg=" + cmd + "&region=" + Configuration.MUIP_SERVER.region + "&ticket=YSGM@" + new Date().getTime());
             var connection = (HttpURLConnection) url.openConnection();
 
             if (connection.getResponseCode() == 200) {
