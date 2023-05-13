@@ -69,6 +69,7 @@ public class GameSession {
 
         @Override
         public void handleException(Throwable ex, Ukcp ukcp) {
+            ProtoShift.getLogger().error("server exception: " + ukcp.user().getRemoteAddress(), ex);
         }
 
         @Override

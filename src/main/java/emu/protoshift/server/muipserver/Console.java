@@ -9,13 +9,13 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.util.Date;
 
 public class Console {
     public static String exec(int uid, String cmd) {
         try {
-            URL url = new URL(Configuration.MUIP_SERVER.address + "?cmd=1116&uid=" + uid + "&msg=" + cmd + "&region=" + Configuration.MUIP_SERVER.region + "&ticket=YSGM@" + new Date().getTime());
+            URL url = new URL(Configuration.MUIP_SERVER.address + "?cmd=1116&uid=" + uid + "&msg=" + URLEncoder.encode(cmd, StandardCharsets.UTF_8) + "&region=" + Configuration.MUIP_SERVER.region);
             var connection = (HttpURLConnection) url.openConnection();
 
             if (connection.getResponseCode() == 200) {

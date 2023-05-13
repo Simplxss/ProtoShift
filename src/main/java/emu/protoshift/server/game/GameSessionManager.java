@@ -58,6 +58,7 @@ public class GameSessionManager {
 
         @Override
         public void handleException(Throwable ex, Ukcp ukcp) {
+            ProtoShift.getLogger().error("client exception: " + ukcp.user().getRemoteAddress(), ex);
         }
 
         @Override

@@ -42,6 +42,7 @@ public class HandleLogin {
 
                 var encrypt_key = MT19937.generateKey(encrypt_seed);
 
+                session.setUid(rsp.getUid());
                 session.setEncryptKey(encrypt_key);
 
                 // Set session state

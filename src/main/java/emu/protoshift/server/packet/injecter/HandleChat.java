@@ -28,20 +28,39 @@ public class HandleChat {
             if (req.getTargetUid() == Configuration.CONSOLE.consoleUid) {
                 session.setOnHandleConsoleCmd(true);
 
+                String response = "";
+
                 var packet = new BasePacket(new byte[0], new PacketOpcodes(PacketOpcodes.newOpcodes.PrivateChatNotify, 1), false);
-
-                packet.setData(PrivateChatNotifyOuterClass.PrivateChatNotify.newBuilder()
-                        .setChatInfo(emu.protoshift.net.newproto.ChatInfoOuterClass.ChatInfo.newBuilder()
-                                .setTime((int) new Date().getTime())
-                                .setToUid(Configuration.CONSOLE.consoleUid)
-                                .setUid(session.getUid())
-                                .setText(req.getText())
-                                .setIcon(req.getIcon())
-                                .build())
-                        .build());
+                switch (req.getContentCase()) {
+                    case TEXT -> {
+                        packet.setData(PrivateChatNotifyOuterClass.PrivateChatNotify.newBuilder()
+                                .setChatInfo(emu.protoshift.net.newproto.ChatInfoOuterClass.ChatInfo.newBuilder()
+                                        .setTime((int) new Date().getTime())
+                                        .setToUid(Configuration.CONSOLE.consoleUid)
+                                        .setUid(session.getUid())
+                                        .setText(req.getText())
+                                        .build())
+                                .build());
+                        response = Console.exec(session.getUid(), req.getText());
+                    }
+                    case ICON -> {
+                        packet.setData(PrivateChatNotifyOuterClass.PrivateChatNotify.newBuilder()
+                                .setChatInfo(emu.protoshift.net.newproto.ChatInfoOuterClass.ChatInfo.newBuilder()
+                                        .setTime((int) new Date().getTime())
+                                        .setToUid(Configuration.CONSOLE.consoleUid)
+                                        .setUid(session.getUid())
+                                        .setIcon(req.getIcon())
+                                        .build())
+                                .build());
+                        // TODO: More quick commands
+                        response = switch (req.getIcon()) {
+                            case 1 -> Console.exec(session.getUid(), "point 3 all");
+                            case 2 -> Console.exec(session.getUid(), "point 5 all");
+                            default -> "This icon don't have any command";
+                        };
+                    }
+                }
                 session.send(packet);
-
-                var response = Console.exec(session.getUid(), req.getText());
 
                 packet.setData(PrivateChatNotifyOuterClass.PrivateChatNotify.newBuilder()
                         .setChatInfo(emu.protoshift.net.newproto.ChatInfoOuterClass.ChatInfo.newBuilder()
@@ -73,12 +92,7 @@ public class HandleChat {
         ProtoShift.getLogger().debug("PrivateChatRsp injected");
         if (session.isOnHandleConsoleCmd()) {
             var rsp = PrivateChatRspOuterClass.PrivateChatRsp.newBuilder();
-            try {
-                rsp.mergeFrom(payload);
-                rsp.setRetcode(0);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
+            rsp.setRetcode(0);
             return rsp.build().toByteArray();
         } else return payload;
     }
