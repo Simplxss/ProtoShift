@@ -1,5 +1,7 @@
 package emu.protoshift;
 
+import emu.protoshift.config.Configuration;
+
 import emu.protoshift.server.game.GameServer;
 
 import emu.protoshift.utils.*;
@@ -23,13 +25,9 @@ public final class ProtoShift {
     private static final Logger logger = (Logger) LoggerFactory.getLogger(ProtoShift.class);
 
     @Getter
-    private static Language language;
-
-    @Getter
     private static GameServer gameServer;
 
-    @Getter
-    private static ConfigContainer config;
+    public static Configuration config;
 
     static {
         // Declare logback configuration.
@@ -37,9 +35,6 @@ public final class ProtoShift {
 
         // Load server configuration.
         loadConfig();
-
-        // Load translation files.
-        loadLanguage();
 
         // Load keys from buffers.
         Crypto.loadKeys();
@@ -53,28 +48,20 @@ public final class ProtoShift {
                 System.exit(0);
             }
             if (arg.equalsIgnoreCase("-debug")) {
-                config.server.debugLevel = ConfigContainer.ServerDebugMode.ALL;
+                Configuration.DEBUG_MODE_INFO = Configuration.DebugMode.ALL;
                 logger.setLevel(ch.qos.logback.classic.Level.DEBUG);
             }
         }
 
         // Initialize server.
-        logger.info(Language.translate("messages.status.starting"));
-        logger.info(Language.translate("messages.status.version", BuildConfig.VERSION, BuildConfig.GIT_HASH));
+        logger.info("Starting Protoshift...");
+        logger.info("Protoshift version: %s-%s".formatted(BuildConfig.VERSION, BuildConfig.GIT_HASH));
 
         // Create server instances.
         gameServer = new GameServer();
 
         // Open console.
         startConsole();
-    }
-
-    /*
-     * Methods for the language system component.
-     */
-
-    public static void loadLanguage() {
-        language = Language.getLanguage(Utils.getLanguageCode(config.language.language));
     }
 
     /*
@@ -89,13 +76,13 @@ public final class ProtoShift {
         // Check if config.json exists. If not, we generate a new config.
         if (!configFile.exists()) {
             logger.info("config.json could not be found. Generating a default configuration ...");
-            ProtoShift.saveConfig(new ConfigContainer());
+            ProtoShift.saveConfig(new Configuration());
             System.exit(1);
         }
 
         // If the file already exists, we attempt to load it.
         try {
-            config = JsonUtils.loadToClass(new FileReader(configFile), ConfigContainer.class);
+            config = JsonUtils.loadToClass(new FileReader(configFile), Configuration.class);
         } catch (Exception exception) {
             logger.error("There was an error while trying to load the configuration from config.json. Please make sure that there are no syntax errors. If you want to start with a default configuration, delete your existing config.json.");
             System.exit(1);
@@ -107,7 +94,7 @@ public final class ProtoShift {
      *
      * @param config The configuration to save, or null for a new one.
      */
-    public static void saveConfig(ConfigContainer config) {
+    public static void saveConfig(Configuration config) {
         var configFile = new File("./config.json");
         try (FileWriter file = new FileWriter(configFile)) {
             file.write(JsonUtils.encode(config));
@@ -132,7 +119,7 @@ public final class ProtoShift {
                 .terminal(terminal)
                 .build();
 
-        logger.info(Language.translate("messages.status.done"));
+        logger.info("Done!");
         boolean isLastInterrupted = false;
         while (true) {
             try {

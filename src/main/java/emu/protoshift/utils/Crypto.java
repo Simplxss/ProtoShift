@@ -21,15 +21,13 @@ public final class Crypto {
         }
     }
 
-    public static void xor(byte[] packet, byte[] key, boolean skip_enc) {
-        if (!skip_enc) {
-            try {
-                for (int i = 0; i < packet.length; i++) {
-                    packet[i] ^= key[i % key.length];
-                }
-            } catch (Exception e) {
-                ProtoShift.getLogger().error("Crypto error.", e);
+    public static void xor(byte[] packet, byte[] key) {
+        try {
+            for (int i = 0; i < packet.length; i++) {
+                packet[i] ^= key[i % key.length];
             }
+        } catch (Exception e) {
+            ProtoShift.getLogger().error("Crypto error.", e);
         }
     }
 

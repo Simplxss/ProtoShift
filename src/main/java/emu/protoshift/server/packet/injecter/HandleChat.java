@@ -2,6 +2,8 @@ package emu.protoshift.server.packet.injecter;
 
 import emu.protoshift.ProtoShift;
 
+import emu.protoshift.config.Configuration;
+
 import emu.protoshift.net.newproto.PrivateChatNotifyOuterClass;
 import emu.protoshift.net.newproto.PrivateChatReqOuterClass;
 import emu.protoshift.net.newproto.PullPrivateChatReqOuterClass;
@@ -23,7 +25,7 @@ public class HandleChat {
         ProtoShift.getLogger().debug("PrivateChatReq injected");
         try {
             var req = PrivateChatReqOuterClass.PrivateChatReq.parseFrom(payload);
-            if (req.getTargetUid() == ProtoShift.getConfig().server.console.consoleUid) {
+            if (req.getTargetUid() == Configuration.CONSOLE.consoleUid) {
                 session.setOnHandleConsoleCmd(true);
 
                 var packet = new BasePacket(new byte[0], new PacketOpcodes(PacketOpcodes.newOpcodes.PrivateChatNotify, 1), false);
@@ -31,7 +33,7 @@ public class HandleChat {
                 packet.setData(PrivateChatNotifyOuterClass.PrivateChatNotify.newBuilder()
                         .setChatInfo(emu.protoshift.net.newproto.ChatInfoOuterClass.ChatInfo.newBuilder()
                                 .setTime((int) new Date().getTime())
-                                .setToUid(ProtoShift.getConfig().server.console.consoleUid)
+                                .setToUid(Configuration.CONSOLE.consoleUid)
                                 .setUid(session.getUid())
                                 .setText(req.getText())
                                 .setIcon(req.getIcon())
@@ -45,7 +47,7 @@ public class HandleChat {
                         .setChatInfo(emu.protoshift.net.newproto.ChatInfoOuterClass.ChatInfo.newBuilder()
                                 .setTime((int) new Date().getTime())
                                 .setToUid(session.getUid())
-                                .setUid(ProtoShift.getConfig().server.console.consoleUid)
+                                .setUid(Configuration.CONSOLE.consoleUid)
                                 .setText(response)
                                 .build())
                         .build());
@@ -60,7 +62,7 @@ public class HandleChat {
         ProtoShift.getLogger().debug("PullPrivateChatReq injected");
         try {
             var req = PullPrivateChatReqOuterClass.PullPrivateChatReq.parseFrom(payload);
-            if (req.getTargetUid() == ProtoShift.getConfig().server.console.consoleUid)
+            if (req.getTargetUid() == Configuration.CONSOLE.consoleUid)
                 session.setOnHandlePullConsoleChat(true);
         } catch (Exception e) {
             e.printStackTrace();
@@ -88,8 +90,8 @@ public class HandleChat {
                     .addChatInfo(emu.protoshift.net.oldproto.ChatInfoOuterClass.ChatInfo.newBuilder()
                             .setTime((int) new Date().getTime())
                             .setToUid(session.getUid())
-                            .setUid(ProtoShift.getConfig().server.console.consoleUid)
-                            .setText(ProtoShift.getConfig().server.console.consoleWelcomeText)
+                            .setUid(Configuration.CONSOLE.consoleUid)
+                            .setText(Configuration.CONSOLE.consoleWelcomeText)
                             .build())
                     .setRetcode(0)
                     .build();
@@ -105,8 +107,8 @@ public class HandleChat {
             rsp.addChatInfo(emu.protoshift.net.oldproto.ChatInfoOuterClass.ChatInfo.newBuilder()
                     .setTime((int) new Date().getTime())
                     .setToUid(session.getUid())
-                    .setUid(ProtoShift.getConfig().server.console.consoleUid)
-                    .setText(ProtoShift.getConfig().server.console.consoleWelcomeText)
+                    .setUid(Configuration.CONSOLE.consoleUid)
+                    .setText(Configuration.CONSOLE.consoleWelcomeText)
                     .build());
         } catch (Exception e) {
             e.printStackTrace();

@@ -1,22 +1,14 @@
-package emu.protoshift.utils;
-
-import java.util.Locale;
+package emu.protoshift.config;
 
 /**
  * *when your JVM fails*
  */
 public class ConfigContainer {
-    public Language language = new Language();
     public Server server = new Server();
     public Remote remote = new Remote();
 
-    public static class Language {
-        public Locale language = Locale.getDefault();
-        public Locale fallback = Locale.US;
-    }
-
     public static class Server {
-        public ServerDebugMode debugLevel = ServerDebugMode.NONE;
+        public DebugMode debugMode = DebugMode.NONE;
 
         public Game game = new Game();
 
@@ -28,7 +20,7 @@ public class ConfigContainer {
         public MuipServer muipserver = new MuipServer();
     }
 
-    public enum ServerDebugMode {
+    public enum DebugMode {
         ALL, NONE
     }
 
