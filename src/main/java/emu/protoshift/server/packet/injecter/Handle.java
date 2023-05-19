@@ -1,9 +1,7 @@
 package emu.protoshift.server.packet.injecter;
 
-import emu.protoshift.ProtoShift;
 import emu.protoshift.config.Configuration;
 import emu.protoshift.net.packet.PacketOpcodes;
-import emu.protoshift.net.packet.PacketOpcodesUtil;
 import emu.protoshift.server.game.GameSession;
 
 public class Handle {
@@ -25,6 +23,8 @@ public class Handle {
                             HandleChat.onPrivateChatReq(session, payload);
                         else if (opcode.value == PacketOpcodes.newOpcodes.PullPrivateChatReq)
                             HandleChat.onPullPrivateChatReq(session, payload);
+                        else if (opcode.value == PacketOpcodes.newOpcodes.GetPlayerSocialDetailReq)
+                            HandleFriends.onGetPlayerSocialDetailReq(session, payload);
                         else if (opcode.value == PacketOpcodes.newOpcodes.MarkMapReq)
                             HandleMap.onMarkMapReq(session, payload);
                     }
@@ -38,6 +38,8 @@ public class Handle {
                             yield HandleChat.onPullRecentChatRsp(session, payload);
                         else if (opcode.value == PacketOpcodes.oldOpcodes.GetPlayerFriendListRsp)
                             yield HandleFriends.onGetPlayerFriendListRsp(payload);
+                        else if (opcode.value == PacketOpcodes.oldOpcodes.GetPlayerSocialDetailRsp)
+                            yield HandleFriends.onGetPlayerSocialDetailRsp(session, payload);
                     }
                 }
                 yield payload;
@@ -49,11 +51,7 @@ public class Handle {
                     HandleLogin.onGetPlayerTokenRsp(session, payload);
                 yield payload;
             }
-            case INACTIVE -> {
-                ProtoShift.getLogger()
-                        .error("Unhandled packet (" + opcode.value + ", " + opcode.type + "): " + PacketOpcodesUtil.getOpcodeName(opcode) + ", server is inactive!");
-                throw new IllegalStateException();
-            }
+            case INACTIVE -> throw new IllegalStateException();
         };
     }
 }

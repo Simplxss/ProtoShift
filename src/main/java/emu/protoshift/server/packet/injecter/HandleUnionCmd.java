@@ -15,7 +15,7 @@ import static emu.protoshift.server.game.GameServerPacketHandler.newHandlers;
 
 public class HandleUnionCmd {
     public static byte[] onUnionCmdNotify(GameSession session, byte[] payload) {
-        ProtoShift.getLogger().debug("UnionCmdNotify injected");
+        ProtoShift.getLogger().info("UnionCmdNotify injected");
         var req = UnionCmdNotifyOuterClass.UnionCmdNotify.newBuilder();
         try {
             req.mergeFrom(payload);

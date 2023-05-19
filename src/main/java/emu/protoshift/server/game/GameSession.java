@@ -40,6 +40,10 @@ public class GameSession {
     @Setter
     boolean isOnHandlePullConsoleChat;
 
+    @Getter
+    @Setter
+    boolean isOnHandleGetConsoleSocialDetail;
+
     private GameSessionManager.KcpTunnel tunnel;
 
     @Getter
@@ -130,10 +134,9 @@ public class GameSession {
             return;
         }
 
-        if (Configuration.DEBUG_MODE_INFO == Configuration.DebugMode.ALL) {
-            ProtoShift.getLogger().debug("Send packet (" + packet.getOpcode().value + ", " + packet.getOpcode().type + "): " + PacketOpcodesUtil.getOpcodeName(packet.getOpcode()) + "\n"
-                    + Utils.bytesToHex(packet.getData()));
-        }
+        ProtoShift.getLogger().info("Send packet (" + packet.getOpcode().value + ", " + packet.getOpcode().type + "): " + PacketOpcodesUtil.getOpcodeName(packet.getOpcode()));
+        if (Configuration.DEBUG_MODE_INFO == Configuration.DebugMode.ALL)
+            ProtoShift.getLogger().debug(Utils.bytesToHex(packet.getData()));
 
         if (tunnel != null) {
             var data = packet.build();

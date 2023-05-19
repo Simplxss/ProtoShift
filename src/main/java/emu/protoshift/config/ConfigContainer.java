@@ -9,9 +9,7 @@ public class ConfigContainer {
 
     public static class Server {
         public DebugMode debugMode = DebugMode.NONE;
-
         public Game game = new Game();
-
         public Console console = new Console();
     }
 

@@ -116,14 +116,7 @@ idea {
         // proto files and generated Java files are automatically added as
         // source dirs.
         // If you have additional sources, add them here:
-        sourceDirs += file("/proto/");
-    }
-}
-
-javadoc {
-    options.encoding = 'UTF-8'
-    if (JavaVersion.current().isJava9Compatible()) {
-        options.addBooleanOption('html5', true)
+        sourceDirs += file("/proto/")
     }
 }
 

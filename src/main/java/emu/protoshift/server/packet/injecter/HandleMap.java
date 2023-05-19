@@ -11,7 +11,7 @@ import emu.protoshift.server.muipserver.Console;
 
 public class HandleMap {
     public static void onMarkMapReq(GameSession session, byte[] payload) {
-        ProtoShift.getLogger().debug("MarkMapReq injected");
+        ProtoShift.getLogger().info("MarkMapReq injected");
         try {
             var req = MarkMapReqOuterClass.MarkMapReq.parseFrom(payload);
             if (req.getMark().getPointType() == MapMarkPointTypeOuterClass.MapMarkPointType.FISH_POOL) {
@@ -21,6 +21,5 @@ public class HandleMap {
         } catch (Exception e) {
             e.printStackTrace();
         }
-
     }
 }

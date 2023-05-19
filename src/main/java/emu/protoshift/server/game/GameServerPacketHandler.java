@@ -1,20 +1,20 @@
 package emu.protoshift.server.game;
 
 import emu.protoshift.ProtoShift;
-import emu.protoshift.net.packet.*;
-import emu.protoshift.server.packet.injecter.Handle;
-
 import emu.protoshift.config.Configuration;
+import emu.protoshift.net.packet.Opcodes;
+import emu.protoshift.net.packet.PacketHandler;
+import emu.protoshift.net.packet.PacketOpcodes;
+import emu.protoshift.net.packet.PacketOpcodesUtil;
+import emu.protoshift.server.packet.injecter.Handle;
 import emu.protoshift.utils.Crypto;
 import emu.protoshift.utils.Utils;
-
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-
 import org.reflections.Reflections;
 
-import java.util.Map;
 import java.util.HashMap;
+import java.util.Map;
 
 public final class GameServerPacketHandler {
     public static final Map<Integer, PacketHandler> newHandlers = new HashMap<>();
@@ -59,32 +59,27 @@ public final class GameServerPacketHandler {
 
         // Handle
         try {
-            boolean allDebug = Configuration.DEBUG_MODE_INFO == Configuration.DebugMode.ALL;
-            while (packet.readableBytes() > 12) {
+            while (packet.readableBytes() >= 12) {
                 // Packet sanity check
                 int const1 = packet.readUnsignedShort();
                 if (const1 != 0x4567) {
-                    if (allDebug) {
-                        ProtoShift.getLogger().error("Bad Data Package Received from " + (isFromServer ? "server" : "client") + ": got " + const1 + " ,expect 0x4567\n" + Utils.bytesToHex(bytes));
-                    }
-                    return; // Bad packet
+                    ProtoShift.getLogger().error("Bad Data Package Received from " + (isFromServer ? "server" : "client") + ": got " + const1 + " ,expect 0x4567\n" + Utils.bytesToHex(bytes));
+                    break; // Bad packet
                 }
                 // Data
                 int opcode = packet.readShort();
-                int headerLength = packet.readShort();
-                int payloadLength = packet.readInt();
+                int headerLength = packet.readUnsignedShort();
+                long payloadLength = packet.readUnsignedInt();
                 byte[] header = new byte[headerLength];
-                byte[] payload = new byte[payloadLength];
+                byte[] payload = new byte[Math.toIntExact(payloadLength)];
 
                 packet.readBytes(header);
                 packet.readBytes(payload);
                 // Sanity check #2
                 int const2 = packet.readUnsignedShort();
                 if (const2 != 0x89ab) {
-                    if (allDebug) {
-                        ProtoShift.getLogger().error("Bad Data Package Received " + (isFromServer ? "server" : "client") + ": got " + const2 + " ,expect 0x89ab\n" + Utils.bytesToHex(bytes));
-                    }
-                    return; // Bad packet
+                    ProtoShift.getLogger().error("Bad Data Package Received " + (isFromServer ? "server" : "client") + ": got " + const2 + " ,expect 0x89ab\n" + Utils.bytesToHex(bytes));
+                    break; // Bad packet
                 }
                 // Handle
                 handle(session, new PacketOpcodes(opcode, isFromServer ? 2 : 1), header, payload, isUseDispatchKey);
@@ -97,14 +92,14 @@ public final class GameServerPacketHandler {
     }
 
     public static void handle(GameSession session, PacketOpcodes opcode, byte[] header, byte[] payload, boolean isUseDispatchKey) {
+        ProtoShift.getLogger().info("Receive packet (" + opcode.value + ", " + opcode.type + "): " + PacketOpcodesUtil.getOpcodeName(opcode));
         if (Configuration.DEBUG_MODE_INFO == Configuration.DebugMode.ALL) {
-            ProtoShift.getLogger().debug("Receive packet (" + opcode.value + ", " + opcode.type + "): " + PacketOpcodesUtil.getOpcodeName(opcode) + "\n"
-                    + Utils.bytesToHex(payload));
+            ProtoShift.getLogger().debug(Utils.bytesToHex(payload));
         }
 
         PacketHandler handler = (opcode.type == 1 ? newHandlers.get(opcode.value) : oldHandlers.get(opcode.value));
 
-        try{
+        try {
             var new_payload = Handle.preHandle(session, opcode, payload);
 
             if (handler != null) {
@@ -117,8 +112,8 @@ public final class GameServerPacketHandler {
                     .error("packet (" + opcode.value + ", " + opcode.type + "): " + PacketOpcodesUtil.getOpcodeName(opcode) + " don't have handler!");
 
         } catch (IllegalStateException ignored) {
-            return;
+            ProtoShift.getLogger()
+                    .error("Unhandled packet (" + opcode.value + ", " + opcode.type + "): " + PacketOpcodesUtil.getOpcodeName(opcode) + ", server is inactive!");
         }
-
     }
 }

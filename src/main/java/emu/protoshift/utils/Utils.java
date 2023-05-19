@@ -1,13 +1,8 @@
 package emu.protoshift.utils;
 
-import java.util.*;
-
 import io.netty.buffer.ByteBuf;
 
-
-
 public final class Utils {
-
 	private static final char[] HEX_ARRAY = "0123456789abcdef".toCharArray();
 
 	public static String bytesToHex(byte[] bytes) {
@@ -26,15 +21,4 @@ public final class Utils {
 		buf.getBytes(0, bytes);
 		return bytes;
 	}
-
-	/**
-	 * Base64 decodes a given string.
-	 * @param toDecode A base64 encoded string.
-	 * @return An array of bytes.
-	 */
-	public static byte[] base64Decode(String toDecode) {
-		return Base64.getDecoder().decode(toDecode);
-	}
-
-
 }

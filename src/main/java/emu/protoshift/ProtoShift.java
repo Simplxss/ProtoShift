@@ -50,8 +50,12 @@ public final class ProtoShift {
             }
             if (arg.equalsIgnoreCase("-debug")) {
                 Configuration.DEBUG_MODE_INFO = Configuration.DebugMode.ALL;
-                logger.setLevel(ch.qos.logback.classic.Level.DEBUG);
             }
+        }
+
+        if(Configuration.DEBUG_MODE_INFO == Configuration.DebugMode.ALL) {
+            logger.setLevel(ch.qos.logback.classic.Level.DEBUG);
+            logger.info("Debug mode enabled.");
         }
 
         // Initialize server.
