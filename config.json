@@ -1,0 +1,32 @@
+{
+  "server": {
+    "debugMode": "NONE",
+    "game": {
+      "bindAddress": "0.0.0.0",
+      "bindPort": 22102,
+      "kcpInterval": 20
+    },
+    "console": {
+      "enabled": false,
+      "consoleUid": 1,
+      "consoleNickname": "ProtoShift",
+      "consoleLevel": 60,
+      "consoleWorldLevel": 8,
+      "consoleSignature": "Debug the world!",
+      "consoleNameCardId": 210001,
+      "consoleAvatarId": 10000077,
+      "consoleCostumeId": 0,
+      "consoleWelcomeText": "Welcome to connect ProtoShift Alpha!"
+    }
+  },
+  "remote": {
+    "gateserver": {
+      "ip": "127.0.0.1",
+      "port": 20041
+    },
+    "muipserver": {
+      "address": "http://127.0.0.1:20011/api",
+      "region": "dev_gio"
+    }
+  }
+}
