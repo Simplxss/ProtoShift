@@ -9,17 +9,14 @@ import emu.protoshift.utils.*;
 
 import lombok.Getter;
 
-import org.jline.reader.LineReaderBuilder;
-import org.jline.reader.UserInterruptException;
-import org.jline.terminal.Terminal;
-import org.jline.terminal.TerminalBuilder;
-
 import ch.qos.logback.classic.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
+
+import static emu.protoshift.utils.Crypto.generateKey;
 
 public final class ProtoShift {
     @Getter
@@ -36,37 +33,29 @@ public final class ProtoShift {
 
         // Load server configuration.
         loadConfig();
+        if (Configuration.DEBUG_MODE_INFO == Configuration.DebugMode.ALL) {
+            logger.setLevel(ch.qos.logback.classic.Level.DEBUG);
+            logger.info("Debug mode enabled.");
+        }
 
         // Load keys from buffers.
         Crypto.loadKeys();
     }
 
     public static void main(String[] args) {
-        // Parse arguments.
-        for (String arg : args) {
-            if (arg.equalsIgnoreCase("-version")) {
-                System.out.println("ProtoShift version: " + BuildConfig.VERSION + "-" + BuildConfig.GIT_HASH);
-                System.exit(0);
-            }
-            if (arg.equalsIgnoreCase("-debug")) {
-                Configuration.DEBUG_MODE_INFO = Configuration.DebugMode.ALL;
-            }
-        }
-
-        if(Configuration.DEBUG_MODE_INFO == Configuration.DebugMode.ALL) {
-            logger.setLevel(ch.qos.logback.classic.Level.DEBUG);
-            logger.info("Debug mode enabled.");
-        }
 
         // Initialize server.
-        logger.info("Starting Protoshift...");
-        logger.info("Protoshift version: %s-%s".formatted(BuildConfig.VERSION, BuildConfig.GIT_HASH));
+        logger.info("Starting ProtoShift...");
+        logger.info("ProtoShift version: " + BuildConfig.VERSION + "-" + BuildConfig.GIT_HASH);
 
         // Create server instances.
         gameServer = new GameServer();
 
-        // Open console.
-        startConsole();
+        logger.info("Done!");
+        try {
+            Thread.sleep(Long.MAX_VALUE);
+        } catch (InterruptedException ignored) {
+        }
     }
 
     /*
@@ -105,41 +94,6 @@ public final class ProtoShift {
             file.write(JsonUtils.encode(config));
         } catch (Exception e) {
             logger.error("Unable to save config file.", e);
-        }
-    }
-
-    public static void startConsole() {
-        Terminal terminal = null;
-        try {
-            terminal = TerminalBuilder.builder().jna(true).build();
-        } catch (Exception e) {
-            try {
-                // Fallback to a dumb jline terminal.
-                terminal = TerminalBuilder.builder().dumb(true).build();
-            } catch (Exception ignored) {
-                // When dumb is true, build() never throws.
-            }
-        }
-        var consoleLineReader = LineReaderBuilder.builder()
-                .terminal(terminal)
-                .build();
-
-        logger.info("Done!");
-        boolean isLastInterrupted = false;
-        while (true) {
-            try {
-                consoleLineReader.readLine("");
-            } catch (UserInterruptException e) {
-                if (!isLastInterrupted) {
-                    isLastInterrupted = true;
-                    logger.info("Press Ctrl-C again to shutdown.");
-                    continue;
-                } else {
-                    Runtime.getRuntime().exit(0);
-                }
-            }
-
-            isLastInterrupted = false;
         }
     }
 }

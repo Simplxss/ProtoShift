@@ -7,7 +7,6 @@ import emu.protoshift.net.oldproto.GetPlayerTokenRspOuterClass;
 import emu.protoshift.server.game.GameSession;
 
 import emu.protoshift.utils.Crypto;
-import emu.protoshift.utils.MT19937;
 
 import javax.crypto.Cipher;
 import java.nio.ByteBuffer;
@@ -43,7 +42,7 @@ public class HandleLogin {
                     encrypt_seed = ByteBuffer.wrap(cipher.doFinal(seed_bytes_encrypted)).getLong() ^ session.getClientSeed();
                 }
 
-                byte[] encrypt_key = MT19937.generateKey(encrypt_seed);
+                byte[] encrypt_key = Crypto.generateKey(encrypt_seed);
 
                 session.setUid(rsp.getUid());
                 session.setEncryptKey(encrypt_key);

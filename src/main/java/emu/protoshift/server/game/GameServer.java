@@ -37,8 +37,8 @@ public final class GameServer extends KcpServer {
         // Initialize KCP server.
         this.init(GameSessionManager.getListener(), channelConfig, address);
 
-        ProtoShift.getLogger().info("Protoshift is FREE software. If you have paid for this, you may have been scammed. Homepage: https://github.com/YuFanXing/ProtoShift");
-        ProtoShift.getLogger().info("Game Server started on port %s".formatted(Integer.toString(address.getPort())));
+        ProtoShift.getLogger().info("ProtoShift is FREE software. If you have paid for this, you may have been scammed. Homepage: https://github.com/YuFanXing/ProtoShift");
+        ProtoShift.getLogger().info("Game Server started on port " + address.getPort());
 
         Runtime.getRuntime().addShutdownHook(new Thread(this::onServerShutdown));
     }

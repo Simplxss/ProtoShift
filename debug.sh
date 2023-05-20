@@ -1,1 +1,0 @@
-java -jar protoshift-alpha.jar -debug

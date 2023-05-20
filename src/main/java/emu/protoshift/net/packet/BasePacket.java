@@ -36,37 +36,36 @@ public class BasePacket {
         if (data == null) {
             data = new byte[0];
         }
-        ByteArrayOutputStream baos = new ByteArrayOutputStream(2 + 2 + 2 + 4 + header.length + data.length + 2);
-        this.writeUint16(baos, const1);
-        this.writeUint16(baos, opcode.value);
-        this.writeUint16(baos, header.length);
-        this.writeUint32(baos, data.length);
-        this.writeBytes(baos, header);
-        this.writeBytes(baos, data);
-        this.writeUint16(baos, const2);
-        return baos.toByteArray();
-    }
-
-    public void writeUint16(ByteArrayOutputStream baos, int i) {
-        // Unsigned short
-        baos.write((byte) ((i >>> 8) & 0xFF));
-        baos.write((byte) (i & 0xFF));
-    }
-
-    public void writeUint32(ByteArrayOutputStream baos, int i) {
-        // Unsigned int (long)
-        baos.write((byte) ((i >>> 24) & 0xFF));
-        baos.write((byte) ((i >>> 16) & 0xFF));
-        baos.write((byte) ((i >>> 8) & 0xFF));
-        baos.write((byte) (i & 0xFF));
-    }
-
-    public void writeBytes(ByteArrayOutputStream baos, byte[] bytes) {
+        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream(2 + 2 + 2 + 4 + header.length + data.length + 2);
+        this.writeUInt16(byteArrayOutputStream, const1);
+        this.writeUInt16(byteArrayOutputStream, opcode.value);
+        this.writeUInt16(byteArrayOutputStream, header.length);
+        this.writeUInt32(byteArrayOutputStream, data.length);
         try {
-            baos.write(bytes);
+            this.writeBytes(byteArrayOutputStream, header);
+            this.writeBytes(byteArrayOutputStream, data);
         } catch (IOException e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
         }
+        this.writeUInt16(byteArrayOutputStream, const2);
+        return byteArrayOutputStream.toByteArray();
+    }
+
+    public void writeUInt16(ByteArrayOutputStream byteArrayOutputStream, int i) {
+        // Unsigned short
+        byteArrayOutputStream.write((byte) ((i >>> 8) & 0xFF));
+        byteArrayOutputStream.write((byte) (i & 0xFF));
+    }
+
+    public void writeUInt32(ByteArrayOutputStream byteArrayOutputStream, int i) {
+        // Unsigned int (long)
+        byteArrayOutputStream.write((byte) ((i >>> 24) & 0xFF));
+        byteArrayOutputStream.write((byte) ((i >>> 16) & 0xFF));
+        byteArrayOutputStream.write((byte) ((i >>> 8) & 0xFF));
+        byteArrayOutputStream.write((byte) (i & 0xFF));
+    }
+
+    public void writeBytes(ByteArrayOutputStream byteArrayOutputStream, byte[] bytes) throws IOException {
+        byteArrayOutputStream.write(bytes);
     }
 }
