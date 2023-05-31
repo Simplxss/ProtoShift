@@ -2,10 +2,7 @@ package emu.protoshift.server.game;
 
 import emu.protoshift.ProtoShift;
 import emu.protoshift.config.Configuration;
-import emu.protoshift.net.packet.Opcodes;
-import emu.protoshift.net.packet.PacketHandler;
-import emu.protoshift.net.packet.PacketOpcodes;
-import emu.protoshift.net.packet.PacketOpcodesUtil;
+import emu.protoshift.net.packet.*;
 import emu.protoshift.server.packet.injecter.Handle;
 import emu.protoshift.utils.Crypto;
 import emu.protoshift.utils.Utils;
@@ -53,8 +50,16 @@ public final class GameServerPacketHandler {
 
     public static void handlePacket(GameSession session, byte[] bytes, boolean isFromServer) {
         // Decrypt and turn back into a packet
-        boolean isUseDispatchKey = (bytes[0] == (byte) (0x45 ^ Crypto.DISPATCH_KEY[0]) && bytes[1] == (byte) (0x67 ^ Crypto.DISPATCH_KEY[1]));
-        Crypto.xor(bytes, isUseDispatchKey ? Crypto.DISPATCH_KEY : session.getEncryptKey());
+        BasePacket.EncryptType encryptType;
+        if (bytes[0] == 0x45 && bytes[1] == 0x67)
+            encryptType = BasePacket.EncryptType.NONE;
+        else if (bytes[0] == (byte) (0x45 ^ Crypto.DISPATCH_KEY[0]) && bytes[1] == (byte) (0x67 ^ Crypto.DISPATCH_KEY[1])) {
+            encryptType = BasePacket.EncryptType.DISPATCH_KEY;
+            Crypto.xor(bytes, Crypto.DISPATCH_KEY);
+        } else {
+            encryptType = BasePacket.EncryptType.ENCRYPT_KEY;
+            Crypto.xor(bytes, session.getEncryptKey());
+        }
         ByteBuf packet = Unpooled.wrappedBuffer(bytes);
 
         // Handle
@@ -82,7 +87,7 @@ public final class GameServerPacketHandler {
                     break; // Bad packet
                 }
                 // Handle
-                handle(session, new PacketOpcodes(opcode, isFromServer ? 2 : 1), header, payload, isUseDispatchKey);
+                handle(session, new PacketOpcodes(opcode, isFromServer ? 2 : 1), header, payload, encryptType);
             }
         } catch (Exception e) {
             ProtoShift.getLogger().error("Error handling packet: " + e.getMessage());
@@ -91,7 +96,7 @@ public final class GameServerPacketHandler {
         }
     }
 
-    public static void handle(GameSession session, PacketOpcodes opcode, byte[] header, byte[] payload, boolean isUseDispatchKey) {
+    public static void handle(GameSession session, PacketOpcodes opcode, byte[] header, byte[] payload, BasePacket.EncryptType encryptType) {
         ProtoShift.getLogger().info("Receive packet (" + opcode.value + ", " + opcode.type + "): " + PacketOpcodesUtil.getOpcodeName(opcode));
         if (Configuration.DEBUG_MODE_INFO == Configuration.DebugMode.ALL) {
             ProtoShift.getLogger().debug(Utils.bytesToHex(payload));
@@ -104,7 +109,7 @@ public final class GameServerPacketHandler {
 
             if (handler != null) {
                 try {
-                    handler.handle(session, header, new_payload, isUseDispatchKey);
+                    handler.handle(session, header, new_payload, encryptType);
                 } catch (Exception ex) {
                     ex.printStackTrace();
                 }

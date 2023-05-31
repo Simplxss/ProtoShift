@@ -19,7 +19,7 @@ import java.util.Date;
 
 public class HandleFriends {
     public static void onGetPlayerSocialDetailReq(GameSession session, byte[] payload) {
-        ProtoShift.getLogger().info("GetPlayerSocialDetailReq injected");
+        ProtoShift.getLogger().debug("GetPlayerSocialDetailReq injected");
         try {
             var req = GetPlayerSocialDetailReqOuterClass.GetPlayerSocialDetailReq.parseFrom(payload);
             if (req.getUid() == Configuration.CONSOLE.consoleUid)
@@ -30,7 +30,7 @@ public class HandleFriends {
     }
 
     public static byte[] onGetPlayerFriendListRsp(byte[] payload) {
-        ProtoShift.getLogger().info("GetPlayerFriendListRsp injected");
+        ProtoShift.getLogger().debug("GetPlayerFriendListRsp injected");
         var rsp = GetPlayerFriendListRspOuterClass.GetPlayerFriendListRsp.newBuilder();
         try {
             rsp.mergeFrom(payload);
@@ -57,7 +57,7 @@ public class HandleFriends {
     }
 
     public static byte[] onGetPlayerSocialDetailRsp(GameSession session, byte[] payload) {
-        ProtoShift.getLogger().info("GetPlayerSocialDetailRsp injected");
+        ProtoShift.getLogger().debug("GetPlayerSocialDetailRsp injected");
         if (session.isOnHandleGetConsoleSocialDetail()) {
             var rsp = GetPlayerSocialDetailRspOuterClass.GetPlayerSocialDetailRsp.newBuilder()
                     .setDetailData(SocialDetailOuterClass.SocialDetail.newBuilder()

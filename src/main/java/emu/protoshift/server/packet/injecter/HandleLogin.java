@@ -19,7 +19,7 @@ public class HandleLogin {
             var req = GetPlayerTokenReqOuterClass.GetPlayerTokenReq.parseFrom(payload);
 
             Cipher cipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");
-            cipher.init(Cipher.DECRYPT_MODE, Crypto.CUR_SIGNING_KEY);
+            cipher.init(Cipher.DECRYPT_MODE, Crypto.SIGNING_KEY);
 
             byte[] client_seed_encrypted = Base64.getDecoder().decode(req.getClientRandKey());
             session.setClientSeed(ByteBuffer.wrap(cipher.doFinal(client_seed_encrypted)).getLong());

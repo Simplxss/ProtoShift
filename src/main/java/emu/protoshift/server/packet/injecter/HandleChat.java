@@ -22,7 +22,7 @@ import java.util.Date;
 
 public class HandleChat {
     public static void onPrivateChatReq(GameSession session, byte[] payload) {
-        ProtoShift.getLogger().info("PrivateChatReq injected");
+        ProtoShift.getLogger().debug("PrivateChatReq injected");
         try {
             var req = PrivateChatReqOuterClass.PrivateChatReq.parseFrom(payload);
             if (req.getTargetUid() == Configuration.CONSOLE.consoleUid) {
@@ -30,7 +30,7 @@ public class HandleChat {
 
                 String response = "";
 
-                var packet = new BasePacket(new byte[0], new PacketOpcodes(PacketOpcodes.newOpcodes.PrivateChatNotify, 1), false);
+                var packet = new BasePacket(new byte[0], new PacketOpcodes(PacketOpcodes.newOpcodes.PrivateChatNotify, 1), BasePacket.EncryptType.ENCRYPT_KEY);
                 switch (req.getContentCase()) {
                     case TEXT -> {
                         packet.setData(PrivateChatNotifyOuterClass.PrivateChatNotify.newBuilder()
@@ -78,7 +78,7 @@ public class HandleChat {
     }
 
     public static void onPullPrivateChatReq(GameSession session, byte[] payload) {
-        ProtoShift.getLogger().info("PullPrivateChatReq injected");
+        ProtoShift.getLogger().debug("PullPrivateChatReq injected");
         try {
             var req = PullPrivateChatReqOuterClass.PullPrivateChatReq.parseFrom(payload);
             if (req.getTargetUid() == Configuration.CONSOLE.consoleUid)
@@ -89,7 +89,7 @@ public class HandleChat {
     }
 
     public static byte[] onPrivateChatRsp(GameSession session, byte[] payload) {
-        ProtoShift.getLogger().info("PrivateChatRsp injected");
+        ProtoShift.getLogger().debug("PrivateChatRsp injected");
         if (session.isOnHandleConsoleCmd()) {
             var rsp = PrivateChatRspOuterClass.PrivateChatRsp.newBuilder();
             rsp.setRetcode(0);
@@ -98,7 +98,7 @@ public class HandleChat {
     }
 
     public static byte[] onPullPrivateChatRsp(GameSession session, byte[] payload) {
-        ProtoShift.getLogger().info("PullPrivateChatRsp injected");
+        ProtoShift.getLogger().debug("PullPrivateChatRsp injected");
         if (session.isOnHandlePullConsoleChat()) {
             var rsp = PullPrivateChatRspOuterClass.PullPrivateChatRsp.newBuilder()
                     .addChatInfo(emu.protoshift.net.oldproto.ChatInfoOuterClass.ChatInfo.newBuilder()
@@ -113,7 +113,7 @@ public class HandleChat {
     }
 
     public static byte[] onPullRecentChatRsp(GameSession session, byte[] payload) {
-        ProtoShift.getLogger().info("PullRecentChatRsp injected");
+        ProtoShift.getLogger().debug("PullRecentChatRsp injected");
         var rsp = PullRecentChatRspOuterClass.PullRecentChatRsp.newBuilder();
         try {
             rsp.mergeFrom(payload);

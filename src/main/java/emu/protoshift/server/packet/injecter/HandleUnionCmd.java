@@ -22,7 +22,7 @@ public class HandleUnionCmd {
             for (var cmd : req.getCmdListBuilderList()) {
 
                 BasePacket new_packet = newHandlers.get(cmd.getMessageId()).
-                        Packet(Handle.preHandle(session, new PacketOpcodes(cmd.getMessageId(), 1), cmd.getBody().toByteArray()));
+                        handle(Handle.preHandle(session, new PacketOpcodes(cmd.getMessageId(), 1), cmd.getBody().toByteArray()));
                 cmd.setMessageId(new_packet.getOpcode().value);
                 cmd.setBody(ByteString.copyFrom(new_packet.getData()));
             }

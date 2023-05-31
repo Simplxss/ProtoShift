@@ -9,13 +9,14 @@ import emu.protoshift.ProtoShift;
 public final class Crypto {
     public static byte[] DISPATCH_KEY;
 
-    public static PrivateKey CUR_SIGNING_KEY;
+    public static PrivateKey SIGNING_KEY;
 
     public static void loadKeys() {
         DISPATCH_KEY = FileUtils.readResource("/keys/dispatchKey.bin");
+        byte[] SIGNING_KEY =FileUtils.readResource("/keys/SigningKey.der");
         try {
-            CUR_SIGNING_KEY = KeyFactory.getInstance("RSA")
-                    .generatePrivate(new PKCS8EncodedKeySpec(FileUtils.readResource("/keys/SigningKey.der")));
+            Crypto.SIGNING_KEY = KeyFactory.getInstance("RSA")
+                    .generatePrivate(new PKCS8EncodedKeySpec(SIGNING_KEY));
         } catch (Exception e) {
             ProtoShift.getLogger().error("An error occurred while loading keys.", e);
         }

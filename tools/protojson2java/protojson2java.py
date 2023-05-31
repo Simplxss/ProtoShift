@@ -43,32 +43,30 @@ import emu.protoshift.server.game.GameSession;
 @Opcodes(value = PacketOpcodes.newOpcodes.'''+i+''', type = 1)
 public class Handler'''+i+''' extends PacketHandler {
     public static class Packet extends BasePacket {
-
-        public Packet(byte[] header, boolean isUseDispatchKey, emu.protoshift.net.newproto.'''+i+'''OuterClass.'''+i+''' req) {
-            super(header, new PacketOpcodes(PacketOpcodes.oldOpcodes.'''+i+''', 2), isUseDispatchKey);
-
+        public Packet(byte[] header, EncryptType encryptType, byte[] payload) {
+            super(header, new PacketOpcodes(PacketOpcodes.oldOpcodes.'''+i+''', 2), encryptType);
             var q = emu.protoshift.net.oldproto.'''+i+'''OuterClass.'''+i+'''.newBuilder();
             try{
-                String json = JsonFormat.printer().printingEnumsAsInts().print(req);
-                JsonFormat.parser().ignoringUnknownFields().merge(json, q);
+                JsonFormat.parser().ignoringUnknownFields().merge(
+                        JsonFormat.printer().printingEnumsAsInts().print(
+                            emu.protoshift.net.newproto.'''+i+'''OuterClass.'''+i+'''.parseFrom(payload)
+                        ), q);
             } catch (InvalidProtocolBufferException e) {
                 throw new RuntimeException(e);
             }
-
             this.setData(q.build());
         }
     }
 
     @Override
-    public BasePacket Packet(byte[] payload) throws Exception {
-        return new Packet(new byte[0], false, emu.protoshift.net.newproto.'''+i+'''OuterClass.'''+i+'''.parseFrom(payload));
+    public BasePacket handle(byte[] payload) throws Exception {
+        return new Packet(new byte[0], BasePacket.EncryptType.NONE, payload);
     }
 
     @Override
-    public void handle(GameSession session, byte[] header, byte[] payload, boolean isUseDispatchKey) throws Exception {
-        session.send(new Packet(header, isUseDispatchKey, emu.protoshift.net.newproto.'''+i+'''OuterClass.'''+i+'''.parseFrom(payload)));
+    public void handle(GameSession session, byte[] header, byte[] payload, BasePacket.EncryptType encryptType) throws Exception {
+        session.send(new Packet(header, encryptType, payload));
     }
-
 }
 ''')
         with open(OUTPUT_SEND_DIR+'Handler'+i+'.java', 'w', encoding='utf-8') as file:
@@ -88,14 +86,14 @@ import emu.protoshift.server.game.GameSession;
 @Opcodes(value = PacketOpcodes.oldOpcodes.'''+i+''', type = 2)
 public class Handler'''+i+''' extends PacketHandler {
     public static class Packet extends BasePacket {
-
-        public Packet(byte[] header, boolean isUseDispatchKey, emu.protoshift.net.oldproto.'''+i+'''OuterClass.'''+i+''' rsp) {
-            super(header, new PacketOpcodes(PacketOpcodes.newOpcodes.'''+i+''', 1), isUseDispatchKey);
-
+        public Packet(byte[] header, EncryptType encryptType, byte[] payload) {
+            super(header, new PacketOpcodes(PacketOpcodes.newOpcodes.'''+i+''', 1), encryptType);
             var p = emu.protoshift.net.newproto.'''+i+'''OuterClass.'''+i+'''.newBuilder();
             try{
-                String json = JsonFormat.printer().printingEnumsAsInts().print(rsp);
-                JsonFormat.parser().ignoringUnknownFields().merge(json, p);
+                JsonFormat.parser().ignoringUnknownFields().merge(
+                        JsonFormat.printer().printingEnumsAsInts().print(
+                                emu.protoshift.net.oldproto.'''+i+'''OuterClass.'''+i+'''.parseFrom(payload)
+                        ), p);
             } catch (InvalidProtocolBufferException e) {
                 throw new RuntimeException(e);
             }
@@ -105,15 +103,14 @@ public class Handler'''+i+''' extends PacketHandler {
     }
 
     @Override
-    public BasePacket Packet(byte[] payload) throws Exception {
-        return new Packet(new byte[0], false, emu.protoshift.net.oldproto.'''+i+'''OuterClass.'''+i+'''.parseFrom(payload));
+    public BasePacket handle(byte[] payload) throws Exception {
+        return new Packet(new byte[0], BasePacket.EncryptType.NONE, payload);
     }
 
     @Override
-    public void handle(GameSession session, byte[] header, byte[] payload, boolean isUseDispatchKey) throws Exception {
-        session.send(new Packet(header, isUseDispatchKey, emu.protoshift.net.oldproto.'''+i+'''OuterClass.'''+i+'''.parseFrom(payload)));
+    public void handle(GameSession session, byte[] header, byte[] payload, BasePacket.EncryptType encryptType) throws Exception {
+        session.send(new Packet(header, encryptType, payload));
     }
-
 }
 ''')
 

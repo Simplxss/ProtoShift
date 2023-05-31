@@ -167,7 +167,7 @@ public class HandleCombat {
     }
 
     public static byte[] onCombatInvocationsNotify(byte[] payload) {
-        ProtoShift.getLogger().info("CombatInvocationsNotify injected");
+        ProtoShift.getLogger().debug("CombatInvocationsNotify injected");
         var req = CombatInvocationsNotifyOuterClass.CombatInvocationsNotify.newBuilder();
         try {
             req.mergeFrom(payload);

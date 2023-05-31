@@ -16,13 +16,18 @@ public class BasePacket {
     private byte[] header;
     @Getter
     private byte[] data;
-    // Encryption
-    public boolean isUseDispatchKey;
 
-    public BasePacket(byte[] header, PacketOpcodes opcode, boolean isUseDispatchKey) {
+    // Encryption
+    public enum EncryptType {
+        NONE, DISPATCH_KEY, ENCRYPT_KEY
+    }
+    @Getter
+    private final EncryptType encryptType;
+
+    public BasePacket(byte[] header, PacketOpcodes opcode, EncryptType encryptType) {
         this.header = header;
         this.opcode = opcode;
-        this.isUseDispatchKey = isUseDispatchKey;
+        this.encryptType = encryptType;
     }
 
     public void setData(GeneratedMessageV3 proto) {

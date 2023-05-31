@@ -190,7 +190,7 @@ public class HandleAbility {
     }
 
     public static byte[] onClientAbilityChangeNotify(byte[] payload) {
-        ProtoShift.getLogger().info("ClientAbilityChangeNotify injected");
+        ProtoShift.getLogger().debug("ClientAbilityChangeNotify injected");
         var req = ClientAbilityChangeNotifyOuterClass.ClientAbilityChangeNotify.newBuilder();
         try {
             req.mergeFrom(payload);
@@ -202,7 +202,7 @@ public class HandleAbility {
     }
 
     public static byte[] onAbilityInvocationsNotify(byte[] payload) {
-        ProtoShift.getLogger().info("AbilityInvocationsNotify injected");
+        ProtoShift.getLogger().debug("AbilityInvocationsNotify injected");
         var req = AbilityInvocationsNotifyOuterClass.AbilityInvocationsNotify.newBuilder();
         try {
             req.mergeFrom(payload);
