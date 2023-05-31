@@ -47,8 +47,7 @@ __pycache__/
 src/generated/*
 src/main/java/emu/protoshift/server/packet/send/
 src/main/java/emu/protoshift/server/packet/recv/
-!src/main/java/emu/protoshift/server/packet/send/Handler.java
-!src/main/java/emu/protoshift/server/packet/recv/Handler.java
+
 tools/proto2json/output/
 tools/protojson2java/cmdIdList.py
 
