@@ -16,8 +16,6 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 
-import static emu.protoshift.utils.Crypto.generateKey;
-
 public final class ProtoShift {
     @Getter
     private static final Logger logger = (Logger) LoggerFactory.getLogger(ProtoShift.class);

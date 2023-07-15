@@ -8,13 +8,15 @@ Some feature are broken due to lake of proto files.
 
 1. get protos for everywhere.
 
-2. put `cmdid.csv` in `proto\v?.?.?\cmdid.csv`
+2. put `cmdid.csv` or `packetIds.json` in `proto\v?.?.?\cmdid.csv` or `proto\v?.?.?\packetIds.json`
 
 3. put `protos` in `proto\v?.?.?\proto\*.proto`
 
-4. run `generateproto.bat`
+4. rename `config.json.example` to `config.json` and edit it.
 
-5. run `gradlew-jar.bat`
+5. run `generateproto.bat`
+
+6. run `gradlew-jar.bat`
 
 # Run
 
