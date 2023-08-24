@@ -2,12 +2,14 @@
 
 
 :: 0) Input version
+set DefaultNewVersion=v4.0.0
+set DefaultOldVersion=v4.0.0
 
-set /p NewVersion=Please input new proto version(v3.6.0):
-set /p OldVersion=Please input old proto version(v3.2.0):
+set /p NewVersion=Please input new proto version(%DefaultNewVersion%):
+set /p OldVersion=Please input old proto version(%DefaultOldVersion%):
 
-if "%NewVersion%"=="" set NewVersion=v3.6.0
-if "%OldVersion%"=="" set OldVersion=v3.2.0
+if "%NewVersion%"=="" set NewVersion=%DefaultNewVersion%
+if "%OldVersion%"=="" set OldVersion=%DefaultOldVersion%
 
 
 :: 1) Clean exist files

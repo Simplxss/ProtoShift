@@ -51,6 +51,10 @@ src/main/java/emu/protoshift/server/packet/recv/
 tools/proto2json/output/
 tools/protojson2java/cmdIdList.py
 
+src/main/java/emu/protoshift/net/packet/PacketOpcodes.java
+src/main/java/emu/protoshift/server/packet/injecter/HandleAbility.java
+src/main/java/emu/protoshift/server/packet/injecter/HandleCombat.java
+
 /*.jar
 
 config.json
