@@ -1,6 +1,7 @@
 package emu.protoshift.server.game;
 
 import emu.protoshift.ProtoShift;
+import emu.protoshift.server.packet.PacketHandler;
 import emu.protoshift.utils.Utils;
 
 import io.netty.buffer.ByteBuf;
@@ -50,7 +51,7 @@ public class GameSessionManager {
             selector.get(conversation).execute(
                     () -> {
                         if (conversation != null) {
-                            GameServerPacketHandler.handlePacket(conversation, byteData, false);
+                            PacketHandler.handlePacket(conversation, byteData, false);
                         }
                     }
             );

@@ -2,21 +2,29 @@ package emu.protoshift.utils;
 
 import java.security.KeyFactory;
 import java.security.PrivateKey;
+import java.security.PublicKey;
 import java.security.spec.PKCS8EncodedKeySpec;
+import java.security.spec.X509EncodedKeySpec;
 
 import emu.protoshift.ProtoShift;
 
 public final class Crypto {
     public static byte[] DISPATCH_KEY;
 
-    public static PrivateKey SIGNING_KEY;
+    public static PrivateKey SIGNING_KEY_FOR_CLIENT;
+    public static PublicKey SIGNING_KEY_FOR_UPSTREAM;
+
 
     public static void loadKeys() {
         DISPATCH_KEY = FileUtils.readResource("/keys/dispatchKey.bin");
-        byte[] SIGNING_KEY =FileUtils.readResource("/keys/SigningKey.der");
+        byte[] SIGNING_KEY_FOR_CLIENT = FileUtils.readResource("/keys/ClientSigningKey.der");
+        byte[] SIGNING_KEY_FOR_UPSTREAM = FileUtils.readResource("/keys/UpstreamSigningKey.der");
+
         try {
-            Crypto.SIGNING_KEY = KeyFactory.getInstance("RSA")
-                    .generatePrivate(new PKCS8EncodedKeySpec(SIGNING_KEY));
+            Crypto.SIGNING_KEY_FOR_CLIENT = KeyFactory.getInstance("RSA")
+                    .generatePrivate(new PKCS8EncodedKeySpec(SIGNING_KEY_FOR_CLIENT));
+            Crypto.SIGNING_KEY_FOR_UPSTREAM = KeyFactory.getInstance("RSA")
+                    .generatePublic(new X509EncodedKeySpec(SIGNING_KEY_FOR_UPSTREAM));
         } catch (Exception e) {
             ProtoShift.getLogger().error("An error occurred while loading keys.", e);
         }

@@ -6,6 +6,7 @@ import emu.protoshift.net.packet.BasePacket;
 import emu.protoshift.net.packet.PacketOpcodesUtil;
 
 import emu.protoshift.config.Configuration;
+import emu.protoshift.server.packet.PacketHandler;
 import emu.protoshift.utils.Crypto;
 import emu.protoshift.utils.Utils;
 
@@ -68,7 +69,7 @@ public class GameSession {
         @Override
         public void handleReceive(ByteBuf buf, Ukcp kcp) {
             byte[] byteData = Utils.byteBufToArray(buf);
-            GameServerPacketHandler.handlePacket(GameSession.this, byteData, true);
+            PacketHandler.handlePacket(GameSession.this, byteData, true);
         }
 
         @Override

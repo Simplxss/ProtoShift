@@ -30,6 +30,10 @@ public class BasePacket {
         this.encryptType = encryptType;
     }
 
+    public void setData(byte[] data) {
+        this.data = data;
+    }
+
     public void setData(GeneratedMessageV3 proto) {
         this.data = proto.toByteArray();
     }
