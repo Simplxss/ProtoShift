@@ -12,7 +12,7 @@ Some feature are broken due to lake of proto files.
 
 3. put `protos` in `proto\v?.?.?\proto\*.proto`
 
-4. rename `config.json.example` to `config.json` and edit the `remote.gateserver` and optional `remote.muipserver`.
+4. rename `config.json.example` to `config.json` and edit the `remote.gateserver` and optional `remote.muipserver`
 
 5. run `generateproto.bat`
 
@@ -20,6 +20,4 @@ Some feature are broken due to lake of proto files.
 
 # Run
 
-1. edit `remote` in `config.json`
-
-2. run `start.bat`
+1. run `start.bat`
