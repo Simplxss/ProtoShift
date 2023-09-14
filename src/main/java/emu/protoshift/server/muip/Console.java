@@ -1,4 +1,4 @@
-package emu.protoshift.server.muipserver;
+package emu.protoshift.server.muip;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
