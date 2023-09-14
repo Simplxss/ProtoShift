@@ -45,7 +45,6 @@ public class GameSession {
     @Setter
     boolean isOnHandleGetConsoleSocialDetail;
 
-    private GameSessionManager.KcpTunnel tunnel;
 
     @Getter
     @Setter
@@ -55,6 +54,7 @@ public class GameSession {
     @Setter
     private byte[] encryptKey;
 
+    private Ukcp KCP_server;
     private final KCP KCP_client = new KCP();
 
     private class KCP implements KcpListener {
@@ -81,18 +81,16 @@ public class GameSession {
         public void handleClose(Ukcp ukcp) {
             ProtoShift.getLogger().info("server disconnected: " + ukcp.user().getRemoteAddress());
             this.ukcp = null;
-            if (tunnel != null) {
-                tunnel.close();
+            if (KCP_server != null) {
+                KCP_server.close();
             }
             GameSession.this.setState(SessionState.INACTIVE);
         }
 
-        public void send(byte[] data) {
+        public void send(ByteBuf buf) {
             for (int retry = 1; retry <= 3; retry++) {
                 if (ukcp != null) {
-                    ByteBuf buf = Unpooled.wrappedBuffer(data);
                     ukcp.write(buf);
-                    buf.release();
                     return;
                 } else {
                     try {
@@ -110,8 +108,8 @@ public class GameSession {
         }
     }
 
-    public GameSession(GameSessionManager.KcpTunnel tunnel) {
-        this.tunnel = tunnel;
+    public GameSession(Ukcp ukcp) {
+        KCP_server = ukcp;
 
         ChannelConfig channelConfig = new ChannelConfig();
         channelConfig.nodelay(true, Configuration.GAME.kcpInterval, 2, true);
@@ -139,18 +137,21 @@ public class GameSession {
         if (Configuration.DEBUG_MODE_INFO == Configuration.DebugMode.ALL)
             ProtoShift.getLogger().debug(Utils.bytesToHex(packet.getData()));
 
-        if (tunnel != null) {
+        if (KCP_server != null) {
             var data = packet.build();
-            switch (packet.getEncryptType()){
-                case NONE -> {}
+            switch (packet.getEncryptType()) {
+                case NONE -> {
+                }
                 case DISPATCH_KEY -> Crypto.xor(data, Crypto.DISPATCH_KEY);
                 case ENCRYPT_KEY -> Crypto.xor(data, encryptKey);
             }
 
+            ByteBuf buf = Unpooled.wrappedBuffer(data);
             switch (packet.getOpcode().type) {
-                case 1 -> tunnel.writeData(data);
-                case 2 -> KCP_client.send(data);
+                case 1 -> KCP_server.write(buf);
+                case 2 -> KCP_client.send(buf);
             }
+            buf.release();
         }
     }
 
@@ -158,13 +159,13 @@ public class GameSession {
         setState(SessionState.INACTIVE);
 
         KCP_client.close();
-        tunnel = null;
+        KCP_server = null;
     }
 
     public void close() {
-        if (tunnel != null) {
-            tunnel.close();
-            tunnel = null;
+        if (KCP_server != null) {
+            KCP_server.close();
+            KCP_server = null;
         }
         KCP_client.close();
     }

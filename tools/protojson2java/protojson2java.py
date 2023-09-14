@@ -14,7 +14,9 @@ if exists(OUTPUT_INJECTER_DIR):
     shutil.rmtree(OUTPUT_INJECTER_DIR)
 mkdir(OUTPUT_INJECTER_DIR)
 
-if len(sys.argv) > 1 and sys.argv[1] == "1":
+fast_forword_mode = len(sys.argv) > 1 and sys.argv[1] == "1"
+
+if fast_forword_mode:
     with open(OUTPUT_PACKET_DIR + "PacketHandler.java", "w", encoding="utf-8") as file:
         file.write(
             """package emu.protoshift.server.packet;
@@ -91,6 +93,7 @@ public final class PacketHandler {
         try {
             var new_payload = Handle.preHandle(session, opcode, payload);
 
+            opcode.type = opcode.type == 1 ? 2 : 1;
             var packet = new BasePacket(header, opcode, encryptType);
             packet.setData(new_payload);
             session.send(packet);
@@ -142,9 +145,9 @@ public class Handle {
             }
             case WAITING_FOR_TOKEN -> {
                 if (opcode.type == 1 && opcode.value == PacketOpcodes.Opcodes.GetPlayerTokenReq)
-                    HandleLogin.onGetPlayerTokenReq(session, payload);
+                    yield HandleLogin.onGetPlayerTokenReq(session, payload);
                 else if (opcode.type == 2 && opcode.value == PacketOpcodes.Opcodes.GetPlayerTokenRsp)
-                    HandleLogin.onGetPlayerTokenRsp(session, payload);
+                    yield HandleLogin.onGetPlayerTokenRsp(session, payload);
                 yield payload;
             }
             case INACTIVE -> throw new IllegalStateException();
@@ -177,7 +180,7 @@ import emu.protoshift.net.packet.BasePacket;
 import emu.protoshift.net.packet.PacketOpcodes;
 
 import emu.protoshift.server.game.GameSession;
-import emu.protoshift.server.muipserver.Console;
+import emu.protoshift.server.muip.Console;
 
 import java.util.Date;
 
@@ -292,190 +295,6 @@ public class HandleChat {
 }
 """
             )
-        with open(
-            OUTPUT_INJECTER_DIR + "HandleFriends.java", "w", encoding="utf-8"
-        ) as file:
-            file.write(
-                """package emu.protoshift.server.packet.injecter;
-
-import emu.protoshift.ProtoShift;
-import emu.protoshift.config.Configuration;
-
-import emu.protoshift.net.proto.GetPlayerSocialDetailReqOuterClass;
-
-import emu.protoshift.net.proto.GetPlayerFriendListRspOuterClass;
-import emu.protoshift.net.proto.FriendBriefOuterClass;
-import emu.protoshift.net.proto.ProfilePictureOuterClass;
-import emu.protoshift.net.proto.FriendOnlineStateOuterClass;
-import emu.protoshift.net.proto.PlatformTypeOuterClass;
-import emu.protoshift.net.proto.GetPlayerSocialDetailRspOuterClass;
-import emu.protoshift.net.proto.SocialDetailOuterClass;
-
-import emu.protoshift.server.game.GameSession;
-
-import java.util.Date;
-
-public class HandleFriends {
-    public static void onGetPlayerSocialDetailReq(GameSession session, byte[] payload) {
-        ProtoShift.getLogger().debug("GetPlayerSocialDetailReq injected");
-        try {
-            var req = GetPlayerSocialDetailReqOuterClass.GetPlayerSocialDetailReq.parseFrom(payload);
-            if (req.getUid() == Configuration.CONSOLE.consoleUid)
-                session.setOnHandleGetConsoleSocialDetail(true);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    public static byte[] onGetPlayerFriendListRsp(byte[] payload) {
-        ProtoShift.getLogger().debug("GetPlayerFriendListRsp injected");
-        var rsp = GetPlayerFriendListRspOuterClass.GetPlayerFriendListRsp.newBuilder();
-        try {
-            rsp.mergeFrom(payload);
-            rsp.addFriendList(FriendBriefOuterClass.FriendBrief.newBuilder()
-                    .setUid(Configuration.CONSOLE.consoleUid)
-                    .setNickname(Configuration.CONSOLE.consoleNickname)
-                    .setLevel(Configuration.CONSOLE.consoleLevel)
-                    .setWorldLevel(Configuration.CONSOLE.consoleWorldLevel)
-                    .setSignature(Configuration.CONSOLE.consoleSignature)
-                    .setLastActiveTime((int) new Date().getTime())
-                    .setNameCardId(Configuration.CONSOLE.consoleNameCardId)
-                    .setProfilePicture(ProfilePictureOuterClass.ProfilePicture.newBuilder()
-                            .setAvatarId(Configuration.CONSOLE.consoleAvatarId)
-                            .setCostumeId(Configuration.CONSOLE.consoleCostumeId)
-                            .build())
-                    .setIsGameSource(true)
-                    .setOnlineState(FriendOnlineStateOuterClass.FriendOnlineState.FRIEND_ONLINE_STATE_ONLINE)
-                    .setPlatformType(PlatformTypeOuterClass.PlatformType.PLATFORM_TYPE_PC)
-                    .build());
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return rsp.build().toByteArray();
-    }
-
-    public static byte[] onGetPlayerSocialDetailRsp(GameSession session, byte[] payload) {
-        ProtoShift.getLogger().debug("GetPlayerSocialDetailRsp injected");
-        if (session.isOnHandleGetConsoleSocialDetail()) {
-            var rsp = GetPlayerSocialDetailRspOuterClass.GetPlayerSocialDetailRsp.newBuilder()
-                    .setDetailData(SocialDetailOuterClass.SocialDetail.newBuilder()
-                            .setUid(Configuration.CONSOLE.consoleUid)
-                            .setNickname(Configuration.CONSOLE.consoleNickname)
-                            .setLevel(Configuration.CONSOLE.consoleLevel)
-                            .setAvatarId(Configuration.CONSOLE.consoleAvatarId)
-                            .setSignature(Configuration.CONSOLE.consoleSignature)
-                            .setWorldLevel(Configuration.CONSOLE.consoleWorldLevel)
-                            .setOnlineState(FriendOnlineStateOuterClass.FriendOnlineState.FRIEND_ONLINE_STATE_ONLINE)
-                            .setIsFriend(true)
-                            .setIsMpModeAvailable(false)
-                            .setNameCardId(Configuration.CONSOLE.consoleNameCardId)
-                            .setProfilePicture(ProfilePictureOuterClass.ProfilePicture.newBuilder()
-                                    .setAvatarId(Configuration.CONSOLE.consoleAvatarId)
-                                    .setCostumeId(Configuration.CONSOLE.consoleCostumeId)
-                                    .build()))
-                    .setRetcode(0);
-            return rsp.build().toByteArray();
-        } else return payload;
-    }
-}
-"""
-            )
-        with open(
-            OUTPUT_INJECTER_DIR + "HandleLogin.java", "w", encoding="utf-8"
-        ) as file:
-            file.write(
-                """package emu.protoshift.server.packet.injecter;
-
-import emu.protoshift.ProtoShift;
-import emu.protoshift.net.proto.GetPlayerTokenReqOuterClass;
-import emu.protoshift.net.proto.GetPlayerTokenRspOuterClass;
-
-import emu.protoshift.server.game.GameSession;
-
-import emu.protoshift.utils.Crypto;
-
-import javax.crypto.Cipher;
-import java.nio.ByteBuffer;
-import java.util.Base64;
-
-public class HandleLogin {
-    public static void onGetPlayerTokenReq(GameSession session, byte[] payload) {
-        ProtoShift.getLogger().info("GetPlayerTokenReq injected");
-        try {
-            var req = GetPlayerTokenReqOuterClass.GetPlayerTokenReq.parseFrom(payload);
-
-            Cipher cipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");
-            cipher.init(Cipher.DECRYPT_MODE, Crypto.SIGNING_KEY);
-
-            byte[] client_seed_encrypted = Base64.getDecoder().decode(req.getClientRandKey());
-            session.setClientSeed(ByteBuffer.wrap(cipher.doFinal(client_seed_encrypted)).getLong());
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    public static void onGetPlayerTokenRsp(GameSession session, byte[] payload) {
-        ProtoShift.getLogger().info("GetPlayerTokenRsp injected");
-        try {
-            var rsp = GetPlayerTokenRspOuterClass.GetPlayerTokenRsp.parseFrom(payload);
-
-            if (rsp.getRetcode() == 0) {
-                long encrypt_seed;
-                if ((encrypt_seed = rsp.getSecretKeySeed()) == 0) {
-                    Cipher cipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");
-                    cipher.init(Cipher.DECRYPT_MODE, Crypto.getPriKey(rsp.getKeyId()));
-                    byte[] seed_bytes_encrypted = Base64.getDecoder().decode(rsp.getServerRandKey());
-                    encrypt_seed = ByteBuffer.wrap(cipher.doFinal(seed_bytes_encrypted)).getLong() ^ session.getClientSeed();
-                }
-
-                byte[] encrypt_key = Crypto.generateKey(encrypt_seed);
-
-                session.setUid(rsp.getUid());
-                session.setEncryptKey(encrypt_key);
-
-                // Set session state
-                session.setState(GameSession.SessionState.ACTIVE);
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-}
-"""
-            )
-        with open(
-            OUTPUT_INJECTER_DIR + "HandleMap.java", "w", encoding="utf-8"
-        ) as file:
-            file.write(
-                """package emu.protoshift.server.packet.injecter;
-
-import emu.protoshift.ProtoShift;
-
-import emu.protoshift.net.proto.MapMarkPointTypeOuterClass;
-import emu.protoshift.net.proto.MarkMapReqOuterClass;
-
-import emu.protoshift.server.game.GameSession;
-
-import emu.protoshift.server.muipserver.Console;
-
-public class HandleMap {
-    public static void onMarkMapReq(GameSession session, byte[] payload) {
-        ProtoShift.getLogger().info("MarkMapReq injected");
-        try {
-            var req = MarkMapReqOuterClass.MarkMapReq.parseFrom(payload);
-            if (req.getMark().getPointType() == MapMarkPointTypeOuterClass.MapMarkPointType.MAP_MARK_POINT_TYPE_FISH_POOL) {
-                var Y = req.getMark().getName();
-                Console.exec(session.getUid(), "goto " + req.getMark().getPos().getX() + (Y.equals("") ? " 500 " : " " + Y + " ") + req.getMark().getPos().getZ());
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-}
-"""
-            )
-
-
 else:
     from cmdIdList import oldcmdList, newcmdList
 
@@ -843,7 +662,7 @@ public final class PacketHandler {
                 // Packet sanity check
                 int const1 = packet.readUnsignedShort();
                 if (const1 != 0x4567) {
-                    ProtoShift.getLogger().error("Bad Data Package Received from " + (isFromServer ? "server" : "client") + ": got " + const1 + " ,expect 0x4567\n" + Utils.bytesToHex(bytes));
+                    ProtoShift.getLogger().error("Bad Data Package Received from " + (isFromServer ? "server" : "client") + ": got " + const1 + " ,expect 0x4567\\n" + Utils.bytesToHex(bytes));
                     break; // Bad packet
                 }
                 // Data
@@ -858,7 +677,7 @@ public final class PacketHandler {
                 // Sanity check #2
                 int const2 = packet.readUnsignedShort();
                 if (const2 != 0x89ab) {
-                    ProtoShift.getLogger().error("Bad Data Package Received " + (isFromServer ? "server" : "client") + ": got " + const2 + " ,expect 0x89ab\n" + Utils.bytesToHex(bytes));
+                    ProtoShift.getLogger().error("Bad Data Package Received " + (isFromServer ? "server" : "client") + ": got " + const2 + " ,expect 0x89ab\\n" + Utils.bytesToHex(bytes));
                     break; // Bad packet
                 }
                 // Handle
@@ -950,9 +769,9 @@ public class Handle {
             }
             case WAITING_FOR_TOKEN -> {
                 if (opcode.type == 1 && opcode.value == PacketOpcodes.newOpcodes.GetPlayerTokenReq)
-                    HandleLogin.onGetPlayerTokenReq(session, payload);
+                    yield HandleLogin.onGetPlayerTokenReq(session, payload);
                 else if (opcode.type == 2 && opcode.value == PacketOpcodes.oldOpcodes.GetPlayerTokenRsp)
-                    HandleLogin.onGetPlayerTokenRsp(session, payload);
+                    yield HandleLogin.onGetPlayerTokenRsp(session, payload);
                 yield payload;
             }
             case INACTIVE -> throw new IllegalStateException();
@@ -981,7 +800,7 @@ import emu.protoshift.net.packet.BasePacket;
 import emu.protoshift.net.packet.PacketOpcodes;
 
 import emu.protoshift.server.game.GameSession;
-import emu.protoshift.server.muipserver.Console;
+import emu.protoshift.server.muip.Console;
 
 import java.util.Date;
 
@@ -1096,16 +915,157 @@ public class HandleChat {
 }
 """
         )
+    with open(OUTPUT_INJECTER_DIR + "HandleTime.java", "w", encoding="utf-8") as file:
+        file.write(
+            """package emu.protoshift.server.packet.injecter;
+
+public class HandleTime {
+}
+"""
+        )
     with open(
-        OUTPUT_INJECTER_DIR + "HandleFriends.java", "w", encoding="utf-8"
+        OUTPUT_INJECTER_DIR + "HandleUnionCmd.java", "w", encoding="utf-8"
     ) as file:
         file.write(
             """package emu.protoshift.server.packet.injecter;
 
 import emu.protoshift.ProtoShift;
-import emu.protoshift.config.Configuration;
+import emu.protoshift.net.newproto.UnionCmdNotifyOuterClass;
 
-import emu.protoshift.net.newproto.GetPlayerSocialDetailReqOuterClass;
+import emu.protoshift.net.packet.BasePacket;
+
+import com.google.protobuf.ByteString;
+import emu.protoshift.net.packet.PacketOpcodes;
+import emu.protoshift.server.game.GameSession;
+
+
+import static emu.protoshift.server.packet.PacketHandler.newHandlers;
+
+
+public class HandleUnionCmd {
+    public static byte[] onUnionCmdNotify(GameSession session, byte[] payload) {
+        ProtoShift.getLogger().info("UnionCmdNotify injected");
+        var req = UnionCmdNotifyOuterClass.UnionCmdNotify.newBuilder();
+        try {
+            req.mergeFrom(payload);
+            for (var cmd : req.getCmdListBuilderList()) {
+
+                BasePacket new_packet = newHandlers.get(cmd.getMessageId()).
+                        handle(Handle.preHandle(session, new PacketOpcodes(cmd.getMessageId(), 1), cmd.getBody().toByteArray()));
+                cmd.setMessageId(new_packet.getOpcode().value);
+                cmd.setBody(ByteString.copyFrom(new_packet.getData()));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return req.build().toByteArray();
+    }
+}
+"""
+        )
+
+with open(OUTPUT_INJECTER_DIR + "HandleLogin.java", "w", encoding="utf-8") as file:
+    file.write(
+        """package emu.protoshift.server.packet.injecter;
+
+import emu.protoshift.ProtoShift;
+"""
+        + (
+            """import emu.protoshift.net.proto.GetPlayerTokenReqOuterClass;
+import emu.protoshift.net.proto.GetPlayerTokenRspOuterClass;"""
+            if fast_forword_mode
+            else """import emu.protoshift.net.newproto.GetPlayerTokenReqOuterClass;
+import emu.protoshift.net.oldproto.GetPlayerTokenRspOuterClass;"""
+        )
+        + """
+
+import emu.protoshift.server.game.GameSession;
+
+import emu.protoshift.utils.Crypto;
+
+import javax.crypto.Cipher;
+import java.nio.ByteBuffer;
+import java.security.Signature;
+import java.util.Base64;
+
+public class HandleLogin {
+    public static byte[] onGetPlayerTokenReq(GameSession session, byte[] payload) {
+        ProtoShift.getLogger().info("GetPlayerTokenReq injected");
+        var req = GetPlayerTokenReqOuterClass.GetPlayerTokenReq.newBuilder();
+        try {
+            req.mergeFrom(payload);
+
+            Cipher cipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");
+            cipher.init(Cipher.DECRYPT_MODE, Crypto.SIGNING_KEY_FOR_CLIENT);
+
+            byte[] seedBytes = cipher.doFinal(Base64.getDecoder().decode(req.getClientRandKey()));
+            long clientSeed = ByteBuffer.wrap(seedBytes).getLong();
+
+            cipher.init(Cipher.ENCRYPT_MODE, Crypto.SIGNING_KEY_FOR_UPSTREAM);
+            req.setClientRandKey(Base64.getEncoder().encodeToString(cipher.doFinal(seedBytes)));
+
+            session.setClientSeed(clientSeed);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return req.build().toByteArray();
+    }
+
+    public static byte[] onGetPlayerTokenRsp(GameSession session, byte[] payload) {
+        ProtoShift.getLogger().info("GetPlayerTokenRsp injected");
+        var rsp = GetPlayerTokenRspOuterClass.GetPlayerTokenRsp.newBuilder();
+        try {
+            rsp.mergeFrom(payload);
+
+            if (rsp.getRetcode() == 0) {
+                long encryptSeed = rsp.getSecretKeySeed();
+                if (encryptSeed == 0) {
+                    Cipher cipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");
+                    cipher.init(Cipher.DECRYPT_MODE, Crypto.getPriKey(rsp.getKeyId()));
+                    byte[] seedBytes = cipher.doFinal(Base64.getDecoder().decode(rsp.getServerRandKey()));
+                    encryptSeed = ByteBuffer.wrap(seedBytes).getLong() ^ session.getClientSeed();
+
+                    // Replace sign
+                    var privateSignature = Signature.getInstance("SHA256withRSA");
+                    privateSignature.initSign(Crypto.SIGNING_KEY_FOR_CLIENT);
+                    privateSignature.update(seedBytes);
+
+                    rsp.setSign(Base64.getEncoder().encodeToString(privateSignature.sign()));
+                }
+                byte[] encrypt_key = Crypto.generateKey(encryptSeed);
+
+                session.setUid(rsp.getUid());
+                session.setEncryptKey(encrypt_key);
+                // Set session state
+                session.setState(GameSession.SessionState.ACTIVE);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return rsp.build().toByteArray();
+    }
+}
+"""
+    )
+
+with open(OUTPUT_INJECTER_DIR + "HandleFriends.java", "w", encoding="utf-8") as file:
+    file.write(
+        """package emu.protoshift.server.packet.injecter;
+
+import emu.protoshift.ProtoShift;
+import emu.protoshift.config.Configuration;
+"""
+        + (
+            """import emu.protoshift.net.proto.GetPlayerSocialDetailReqOuterClass;
+import emu.protoshift.net.proto.GetPlayerFriendListRspOuterClass;
+import emu.protoshift.net.proto.FriendBriefOuterClass;
+import emu.protoshift.net.proto.ProfilePictureOuterClass;
+import emu.protoshift.net.proto.FriendOnlineStateOuterClass;
+import emu.protoshift.net.proto.PlatformTypeOuterClass;
+import emu.protoshift.net.proto.GetPlayerSocialDetailRspOuterClass;
+import emu.protoshift.net.proto.SocialDetailOuterClass;"""
+            if fast_forword_mode
+            else """import emu.protoshift.net.newproto.GetPlayerSocialDetailReqOuterClass;
 
 import emu.protoshift.net.oldproto.GetPlayerFriendListRspOuterClass;
 import emu.protoshift.net.oldproto.FriendBriefOuterClass;
@@ -1113,7 +1073,9 @@ import emu.protoshift.net.oldproto.ProfilePictureOuterClass;
 import emu.protoshift.net.oldproto.FriendOnlineStateOuterClass;
 import emu.protoshift.net.oldproto.PlatformTypeOuterClass;
 import emu.protoshift.net.oldproto.GetPlayerSocialDetailRspOuterClass;
-import emu.protoshift.net.oldproto.SocialDetailOuterClass;
+import emu.protoshift.net.oldproto.SocialDetailOuterClass;"""
+        )
+        + """
 
 import emu.protoshift.server.game.GameSession;
 
@@ -1183,89 +1145,35 @@ public class HandleFriends {
     }
 }
 """
-        )
-    with open(OUTPUT_INJECTER_DIR + "HandleLogin.java", "w", encoding="utf-8") as file:
-        file.write(
-            """package emu.protoshift.server.packet.injecter;
+    )
+
+with open(OUTPUT_INJECTER_DIR + "HandleMap.java", "w", encoding="utf-8") as file:
+    file.write(
+        """package emu.protoshift.server.packet.injecter;
 
 import emu.protoshift.ProtoShift;
-import emu.protoshift.net.newproto.GetPlayerTokenReqOuterClass;
-import emu.protoshift.net.oldproto.GetPlayerTokenRspOuterClass;
-
-import emu.protoshift.server.game.GameSession;
-
-import emu.protoshift.utils.Crypto;
-
-import javax.crypto.Cipher;
-import java.nio.ByteBuffer;
-import java.util.Base64;
-
-public class HandleLogin {
-    public static void onGetPlayerTokenReq(GameSession session, byte[] payload) {
-        ProtoShift.getLogger().info("GetPlayerTokenReq injected");
-        try {
-            var req = GetPlayerTokenReqOuterClass.GetPlayerTokenReq.parseFrom(payload);
-
-            Cipher cipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");
-            cipher.init(Cipher.DECRYPT_MODE, Crypto.SIGNING_KEY);
-
-            byte[] client_seed_encrypted = Base64.getDecoder().decode(req.getClientRandKey());
-            session.setClientSeed(ByteBuffer.wrap(cipher.doFinal(client_seed_encrypted)).getLong());
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    public static void onGetPlayerTokenRsp(GameSession session, byte[] payload) {
-        ProtoShift.getLogger().info("GetPlayerTokenRsp injected");
-        try {
-            var rsp = GetPlayerTokenRspOuterClass.GetPlayerTokenRsp.parseFrom(payload);
-
-            if (rsp.getRetcode() == 0) {
-                long encrypt_seed;
-                if ((encrypt_seed = rsp.getSecretKeySeed()) == 0) {
-                    Cipher cipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");
-                    cipher.init(Cipher.DECRYPT_MODE, Crypto.getPriKey(rsp.getKeyId()));
-                    byte[] seed_bytes_encrypted = Base64.getDecoder().decode(rsp.getServerRandKey());
-                    encrypt_seed = ByteBuffer.wrap(cipher.doFinal(seed_bytes_encrypted)).getLong() ^ session.getClientSeed();
-                }
-
-                byte[] encrypt_key = Crypto.generateKey(encrypt_seed);
-
-                session.setUid(rsp.getUid());
-                session.setEncryptKey(encrypt_key);
-
-                // Set session state
-                session.setState(GameSession.SessionState.ACTIVE);
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-}
 """
+        + (
+            """import emu.protoshift.net.proto.MapMarkPointTypeOuterClass;
+import emu.protoshift.net.proto.MarkMapReqOuterClass;"""
+            if fast_forword_mode
+            else """import emu.protoshift.net.newproto.MapMarkPointTypeOuterClass;
+import emu.protoshift.net.newproto.MarkMapReqOuterClass;"""
         )
-    with open(OUTPUT_INJECTER_DIR + "HandleMap.java", "w", encoding="utf-8") as file:
-        file.write(
-            """package emu.protoshift.server.packet.injecter;
-
-import emu.protoshift.ProtoShift;
-
-import emu.protoshift.net.newproto.MapMarkPointTypeOuterClass;
-import emu.protoshift.net.newproto.MarkMapReqOuterClass;
+        + """
 
 import emu.protoshift.server.game.GameSession;
 
-import emu.protoshift.server.muipserver.Console;
+import emu.protoshift.server.muip.Console;
 
 public class HandleMap {
     public static void onMarkMapReq(GameSession session, byte[] payload) {
         ProtoShift.getLogger().info("MarkMapReq injected");
         try {
             var req = MarkMapReqOuterClass.MarkMapReq.parseFrom(payload);
-            if (req.getMark().getPointType() == MapMarkPointTypeOuterClass.MapMarkPointType.FISH_POOL) {
+            if (req.getMark().getPointType() == MapMarkPointTypeOuterClass.MapMarkPointType.MAP_MARK_POINT_TYPE_FISH_POOL) {
                 var Y = req.getMark().getName();
-                Console.exec(session.getUid(), "goto " + req.getMark().getPos().getX() + (Y.equals("") ? " 500 " : " " + Y + " ") + req.getMark().getPos().getZ());
+                Console.exec(session.getUid(), "goto " + req.getMark().getPos().getX() + (Y.isEmpty() ? " 500 " : " " + Y + " ") + req.getMark().getPos().getZ());
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -1273,52 +1181,4 @@ public class HandleMap {
     }
 }
 """
-        )
-    with open(OUTPUT_INJECTER_DIR + "HandleTime.java", "w", encoding="utf-8") as file:
-        file.write(
-            """package emu.protoshift.server.packet.injecter;
-
-public class HandleTime {
-}
-"""
-        )
-    with open(
-        OUTPUT_INJECTER_DIR + "HandleUnionCmd.java", "w", encoding="utf-8"
-    ) as file:
-        file.write(
-            """package emu.protoshift.server.packet.injecter;
-
-import emu.protoshift.ProtoShift;
-import emu.protoshift.net.newproto.UnionCmdNotifyOuterClass;
-
-import emu.protoshift.net.packet.BasePacket;
-
-import com.google.protobuf.ByteString;
-import emu.protoshift.net.packet.PacketOpcodes;
-import emu.protoshift.server.game.GameSession;
-
-
-import static emu.protoshift.server.packet.PacketHandler.newHandlers;
-
-
-public class HandleUnionCmd {
-    public static byte[] onUnionCmdNotify(GameSession session, byte[] payload) {
-        ProtoShift.getLogger().info("UnionCmdNotify injected");
-        var req = UnionCmdNotifyOuterClass.UnionCmdNotify.newBuilder();
-        try {
-            req.mergeFrom(payload);
-            for (var cmd : req.getCmdListBuilderList()) {
-
-                BasePacket new_packet = newHandlers.get(cmd.getMessageId()).
-                        handle(Handle.preHandle(session, new PacketOpcodes(cmd.getMessageId(), 1), cmd.getBody().toByteArray()));
-                cmd.setMessageId(new_packet.getOpcode().value);
-                cmd.setBody(ByteString.copyFrom(new_packet.getData()));
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return req.build().toByteArray();
-    }
-}
-"""
-        )
+    )

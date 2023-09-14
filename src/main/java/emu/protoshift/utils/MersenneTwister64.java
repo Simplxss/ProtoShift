@@ -1,6 +1,6 @@
 package emu.protoshift.utils;
 
-public class MersenneTwister64 {
+public final class MersenneTwister64 {
     // Period parameters
     private static final int N = 312;
     private static final int M = 156;
@@ -11,14 +11,14 @@ public class MersenneTwister64 {
     private final long[] mt = new long[N]; // the array for the state vector
     private int mti; // mti==N+1 means mt[N] is not initialized
 
-    synchronized public void setSeed(long seed) {
+    public synchronized void setSeed(long seed) {
         mt[0] = seed;
         for (mti = 1; mti < N; mti++) {
             mt[mti] = (0x5851F42D4C957F2DL * (mt[mti - 1] ^ (mt[mti - 1] >>> 62)) + mti);
         }
     }
 
-    synchronized protected long nextLong() {
+    public synchronized long nextLong() {
         int i;
         long x;
         final long[] mag01 = {0x0L, MATRIX_A};
