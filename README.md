@@ -8,11 +8,11 @@ Some feature are broken due to lake of proto files.
 
 1. get protos for everywhere.
 
-2. put `cmdid.csv` or `packetIds.json` in `proto\v?.?.?\cmdid.csv` or `proto\v?.?.?\packetIds.json`
+2. put `cmdid.csv`, `cmdid.json` or `packetIds.json` in `proto\v?.?.?\*`
 
 3. put `protos` in `proto\v?.?.?\proto\*.proto`
 
-4. rename `config.json.example` to `config.json` and edit it.
+4. rename `config.json.example` to `config.json` and edit the `remote.gateserver` and optional `remote.muipserver`.
 
 5. run `generateproto.bat`
 
