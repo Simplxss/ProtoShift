@@ -17,6 +17,7 @@ public final class Crypto {
 
     public static void loadKeys() {
         DISPATCH_KEY = FileUtils.readResource("/keys/dispatchKey.bin");
+
         byte[] SIGNING_KEY_FOR_CLIENT = FileUtils.readResource("/keys/ClientSigningKey.der");
         byte[] SIGNING_KEY_FOR_UPSTREAM = FileUtils.readResource("/keys/UpstreamSigningKey.der");
 
