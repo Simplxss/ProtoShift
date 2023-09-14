@@ -91,6 +91,7 @@ public final class PacketHandler {
         try {
             var new_payload = Handle.preHandle(session, opcode, payload);
 
+            opcode.type = opcode.type == 1 ? 2 : 1;
             var packet = new BasePacket(header, opcode, encryptType);
             packet.setData(new_payload);
             session.send(packet);
@@ -177,7 +178,7 @@ import emu.protoshift.net.packet.BasePacket;
 import emu.protoshift.net.packet.PacketOpcodes;
 
 import emu.protoshift.server.game.GameSession;
-import emu.protoshift.server.muipserver.Console;
+import emu.protoshift.server.muip.Console;
 
 import java.util.Date;
 
@@ -396,19 +397,27 @@ import emu.protoshift.utils.Crypto;
 
 import javax.crypto.Cipher;
 import java.nio.ByteBuffer;
+import java.security.Signature;
 import java.util.Base64;
 
 public class HandleLogin {
     public static void onGetPlayerTokenReq(GameSession session, byte[] payload) {
         ProtoShift.getLogger().info("GetPlayerTokenReq injected");
+        var req = GetPlayerTokenReqOuterClass.GetPlayerTokenReq.newBuilder();
         try {
-            var req = GetPlayerTokenReqOuterClass.GetPlayerTokenReq.parseFrom(payload);
+            req.mergeFrom(payload);
 
             Cipher cipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");
-            cipher.init(Cipher.DECRYPT_MODE, Crypto.SIGNING_KEY);
+            cipher.init(Cipher.DECRYPT_MODE, Crypto.SIGNING_KEY_FOR_CLIENT);
 
-            byte[] client_seed_encrypted = Base64.getDecoder().decode(req.getClientRandKey());
-            session.setClientSeed(ByteBuffer.wrap(cipher.doFinal(client_seed_encrypted)).getLong());
+            byte[] seedBytes = cipher.doFinal(Base64.getDecoder().decode(req.getClientRandKey()));
+            long clientSeed = ByteBuffer.wrap(seedBytes).getLong();
+
+            cipher.init(Cipher.ENCRYPT_MODE, Crypto.SIGNING_KEY_FOR_UPSTREAM);
+            req.setClientRandKey(Base64.getEncoder().encodeToString(cipher.doFinal(seedBytes)));
+
+
+            session.setClientSeed(clientSeed);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -416,23 +425,29 @@ public class HandleLogin {
 
     public static void onGetPlayerTokenRsp(GameSession session, byte[] payload) {
         ProtoShift.getLogger().info("GetPlayerTokenRsp injected");
+        var rsp = GetPlayerTokenRspOuterClass.GetPlayerTokenRsp.newBuilder();
         try {
-            var rsp = GetPlayerTokenRspOuterClass.GetPlayerTokenRsp.parseFrom(payload);
+            rsp.mergeFrom(payload);
 
             if (rsp.getRetcode() == 0) {
-                long encrypt_seed;
-                if ((encrypt_seed = rsp.getSecretKeySeed()) == 0) {
+                long encryptSeed = rsp.getSecretKeySeed();
+                if (encryptSeed == 0) {
                     Cipher cipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");
                     cipher.init(Cipher.DECRYPT_MODE, Crypto.getPriKey(rsp.getKeyId()));
-                    byte[] seed_bytes_encrypted = Base64.getDecoder().decode(rsp.getServerRandKey());
-                    encrypt_seed = ByteBuffer.wrap(cipher.doFinal(seed_bytes_encrypted)).getLong() ^ session.getClientSeed();
-                }
+                    byte[] seedBytes = cipher.doFinal(Base64.getDecoder().decode(rsp.getServerRandKey()));
+                    encryptSeed = ByteBuffer.wrap(seedBytes).getLong() ^ session.getClientSeed();
 
-                byte[] encrypt_key = Crypto.generateKey(encrypt_seed);
+                    // Replace sign
+                    var privateSignature = Signature.getInstance("SHA256withRSA");
+                    privateSignature.initSign(Crypto.SIGNING_KEY_FOR_CLIENT);
+                    privateSignature.update(seedBytes);
+
+                    rsp.setSign(Base64.getEncoder().encodeToString(privateSignature.sign()));
+                }
+                byte[] encrypt_key = Crypto.generateKey(encryptSeed);
 
                 session.setUid(rsp.getUid());
                 session.setEncryptKey(encrypt_key);
-
                 // Set session state
                 session.setState(GameSession.SessionState.ACTIVE);
             }
@@ -456,7 +471,7 @@ import emu.protoshift.net.proto.MarkMapReqOuterClass;
 
 import emu.protoshift.server.game.GameSession;
 
-import emu.protoshift.server.muipserver.Console;
+import emu.protoshift.server.muip.Console;
 
 public class HandleMap {
     public static void onMarkMapReq(GameSession session, byte[] payload) {
@@ -981,7 +996,7 @@ import emu.protoshift.net.packet.BasePacket;
 import emu.protoshift.net.packet.PacketOpcodes;
 
 import emu.protoshift.server.game.GameSession;
-import emu.protoshift.server.muipserver.Console;
+import emu.protoshift.server.muip.Console;
 
 import java.util.Date;
 
@@ -1198,19 +1213,27 @@ import emu.protoshift.utils.Crypto;
 
 import javax.crypto.Cipher;
 import java.nio.ByteBuffer;
+import java.security.Signature;
 import java.util.Base64;
 
 public class HandleLogin {
     public static void onGetPlayerTokenReq(GameSession session, byte[] payload) {
         ProtoShift.getLogger().info("GetPlayerTokenReq injected");
+        var req = GetPlayerTokenReqOuterClass.GetPlayerTokenReq.newBuilder();
         try {
-            var req = GetPlayerTokenReqOuterClass.GetPlayerTokenReq.parseFrom(payload);
+            req.mergeFrom(payload);
 
             Cipher cipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");
-            cipher.init(Cipher.DECRYPT_MODE, Crypto.SIGNING_KEY);
+            cipher.init(Cipher.DECRYPT_MODE, Crypto.SIGNING_KEY_FOR_CLIENT);
 
-            byte[] client_seed_encrypted = Base64.getDecoder().decode(req.getClientRandKey());
-            session.setClientSeed(ByteBuffer.wrap(cipher.doFinal(client_seed_encrypted)).getLong());
+            byte[] seedBytes = cipher.doFinal(Base64.getDecoder().decode(req.getClientRandKey()));
+            long clientSeed = ByteBuffer.wrap(seedBytes).getLong();
+
+            cipher.init(Cipher.ENCRYPT_MODE, Crypto.SIGNING_KEY_FOR_UPSTREAM);
+            req.setClientRandKey(Base64.getEncoder().encodeToString(cipher.doFinal(seedBytes)));
+
+
+            session.setClientSeed(clientSeed);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -1218,23 +1241,29 @@ public class HandleLogin {
 
     public static void onGetPlayerTokenRsp(GameSession session, byte[] payload) {
         ProtoShift.getLogger().info("GetPlayerTokenRsp injected");
+        var rsp = GetPlayerTokenRspOuterClass.GetPlayerTokenRsp.newBuilder();
         try {
-            var rsp = GetPlayerTokenRspOuterClass.GetPlayerTokenRsp.parseFrom(payload);
+            rsp.mergeFrom(payload);
 
             if (rsp.getRetcode() == 0) {
-                long encrypt_seed;
-                if ((encrypt_seed = rsp.getSecretKeySeed()) == 0) {
+                long encryptSeed = rsp.getSecretKeySeed();
+                if (encryptSeed == 0) {
                     Cipher cipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");
                     cipher.init(Cipher.DECRYPT_MODE, Crypto.getPriKey(rsp.getKeyId()));
-                    byte[] seed_bytes_encrypted = Base64.getDecoder().decode(rsp.getServerRandKey());
-                    encrypt_seed = ByteBuffer.wrap(cipher.doFinal(seed_bytes_encrypted)).getLong() ^ session.getClientSeed();
-                }
+                    byte[] seedBytes = cipher.doFinal(Base64.getDecoder().decode(rsp.getServerRandKey()));
+                    encryptSeed = ByteBuffer.wrap(seedBytes).getLong() ^ session.getClientSeed();
 
-                byte[] encrypt_key = Crypto.generateKey(encrypt_seed);
+                    // Replace sign
+                    var privateSignature = Signature.getInstance("SHA256withRSA");
+                    privateSignature.initSign(Crypto.SIGNING_KEY_FOR_CLIENT);
+                    privateSignature.update(seedBytes);
+
+                    rsp.setSign(Base64.getEncoder().encodeToString(privateSignature.sign()));
+                }
+                byte[] encrypt_key = Crypto.generateKey(encryptSeed);
 
                 session.setUid(rsp.getUid());
                 session.setEncryptKey(encrypt_key);
-
                 // Set session state
                 session.setState(GameSession.SessionState.ACTIVE);
             }
@@ -1256,7 +1285,7 @@ import emu.protoshift.net.newproto.MarkMapReqOuterClass;
 
 import emu.protoshift.server.game.GameSession;
 
-import emu.protoshift.server.muipserver.Console;
+import emu.protoshift.server.muip.Console;
 
 public class HandleMap {
     public static void onMarkMapReq(GameSession session, byte[] payload) {
