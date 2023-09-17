@@ -38,20 +38,20 @@ java {
 dependencies {
     implementation fileTree(dir: 'lib', include: ['*.jar'])
 
-    implementation group: 'org.slf4j', name: 'slf4j-api', version: '2.0.5'
-    implementation group: 'ch.qos.logback', name: 'logback-core', version: '1.4.7'
-    implementation group: 'ch.qos.logback', name: 'logback-classic', version: '1.4.7'
+    implementation group: 'org.slf4j', name: 'slf4j-api', version: '2.0.9'
+    implementation group: 'ch.qos.logback', name: 'logback-core', version: '1.4.11'
+    implementation group: 'ch.qos.logback', name: 'logback-classic', version: '1.4.11'
 
-    implementation group: 'io.netty', name: 'netty-all', version: '4.1.90.Final'
+    implementation group: 'io.netty', name: 'netty-all', version: '4.1.97.Final'
 
     implementation group: 'com.google.code.gson', name: 'gson', version: '2.10.1'
-    implementation group: 'com.google.protobuf', name: 'protobuf-java', version: '3.22.2'
-    implementation group: 'com.google.protobuf', name: 'protobuf-java-util', version: '3.22.2'
+    implementation group: 'com.google.protobuf', name: 'protobuf-java', version: '3.24.3'
+    implementation group: 'com.google.protobuf', name: 'protobuf-java-util', version: '3.24.3'
 
     implementation group: 'org.reflections', name: 'reflections', version: '0.10.2'
 
-    compileOnly 'org.projectlombok:lombok:1.18.26'
-    annotationProcessor 'org.projectlombok:lombok:1.18.26'
+    compileOnly group: 'org.projectlombok', name: 'lombok', version: '1.18.28'
+    annotationProcessor group: 'org.projectlombok', name: 'lombok', version: '1.18.28'
 
 }
 
