@@ -56,7 +56,7 @@ public final class PacketHandler {
                 // Packet sanity check
                 int const1 = packet.readUnsignedShort();
                 if (const1 != 0x4567) {
-                    ProtoShift.getLogger().error("Bad Data Package Received from " + (isFromServer ? "server" : "client") + ": got " + const1 + " ,expect 0x4567" + Utils.bytesToHex(bytes));
+                    ProtoShift.getLogger().error("Bad Data Package Received from " + (isFromServer ? "server" : "client") + ": got " + const1 + " ,expect 0x4567\\n" + Utils.bytesToHex(bytes));
                     break; // Bad packet
                 }
                 // Data
@@ -71,7 +71,7 @@ public final class PacketHandler {
                 // Sanity check #2
                 int const2 = packet.readUnsignedShort();
                 if (const2 != 0x89ab) {
-                    ProtoShift.getLogger().error("Bad Data Package Received " + (isFromServer ? "server" : "client") + ": got " + const2 + " ,expect 0x89ab" + Utils.bytesToHex(bytes));
+                    ProtoShift.getLogger().error("Bad Data Package Received " + (isFromServer ? "server" : "client") + ": got " + const2 + " ,expect 0x89ab\\n" + Utils.bytesToHex(bytes));
                     break; // Bad packet
                 }
                 // Handle
@@ -145,9 +145,9 @@ public class Handle {
             }
             case WAITING_FOR_TOKEN -> {
                 if (opcode.type == 1 && opcode.value == PacketOpcodes.Opcodes.GetPlayerTokenReq)
-                    HandleLogin.onGetPlayerTokenReq(session, payload);
+                    yield HandleLogin.onGetPlayerTokenReq(session, payload);
                 else if (opcode.type == 2 && opcode.value == PacketOpcodes.Opcodes.GetPlayerTokenRsp)
-                    HandleLogin.onGetPlayerTokenRsp(session, payload);
+                    yield HandleLogin.onGetPlayerTokenRsp(session, payload);
                 yield payload;
             }
             case INACTIVE -> throw new IllegalStateException();
@@ -662,7 +662,7 @@ public final class PacketHandler {
                 // Packet sanity check
                 int const1 = packet.readUnsignedShort();
                 if (const1 != 0x4567) {
-                    ProtoShift.getLogger().error("Bad Data Package Received from " + (isFromServer ? "server" : "client") + ": got " + const1 + " ,expect 0x4567" + Utils.bytesToHex(bytes));
+                    ProtoShift.getLogger().error("Bad Data Package Received from " + (isFromServer ? "server" : "client") + ": got " + const1 + " ,expect 0x4567\\n" + Utils.bytesToHex(bytes));
                     break; // Bad packet
                 }
                 // Data
@@ -677,7 +677,7 @@ public final class PacketHandler {
                 // Sanity check #2
                 int const2 = packet.readUnsignedShort();
                 if (const2 != 0x89ab) {
-                    ProtoShift.getLogger().error("Bad Data Package Received " + (isFromServer ? "server" : "client") + ": got " + const2 + " ,expect 0x89ab" + Utils.bytesToHex(bytes));
+                    ProtoShift.getLogger().error("Bad Data Package Received " + (isFromServer ? "server" : "client") + ": got " + const2 + " ,expect 0x89ab\\n" + Utils.bytesToHex(bytes));
                     break; // Bad packet
                 }
                 // Handle
@@ -1173,7 +1173,7 @@ public class HandleMap {
             var req = MarkMapReqOuterClass.MarkMapReq.parseFrom(payload);
             if (req.getMark().getPointType() == MapMarkPointTypeOuterClass.MapMarkPointType.MAP_MARK_POINT_TYPE_FISH_POOL) {
                 var Y = req.getMark().getName();
-                Console.exec(session.getUid(), "goto " + req.getMark().getPos().getX() + (Y.equals("") ? " 500 " : " " + Y + " ") + req.getMark().getPos().getZ());
+                Console.exec(session.getUid(), "goto " + req.getMark().getPos().getX() + (Y.isEmpty() ? " 500 " : " " + Y + " ") + req.getMark().getPos().getZ());
             }
         } catch (Exception e) {
             e.printStackTrace();
