@@ -119,6 +119,8 @@ public class Handle {
     public static byte[] preHandle(GameSession session, PacketOpcodes opcode, byte[] payload) {
         return switch (session.getState()) {
             case ACTIVE -> {
+                if (opcode.value == PacketOpcodes.Opcodes.PlayerLoginRsp)
+                    yield HandleLogin.onPlayerLoginRsp(session, payload);
                 if (Configuration.CONSOLE.enabled) {
                     if (opcode.value == PacketOpcodes.Opcodes.PrivateChatReq)
                         HandleChat.onPrivateChatReq(session, payload);
@@ -128,9 +130,7 @@ public class Handle {
                         HandleFriends.onGetPlayerSocialDetailReq(session, payload);
                     else if (opcode.value == PacketOpcodes.Opcodes.MarkMapReq)
                         HandleMap.onMarkMapReq(session, payload);
-                }
-                if (Configuration.CONSOLE.enabled) {
-                    if (opcode.value == PacketOpcodes.Opcodes.PrivateChatRsp)
+                    else if (opcode.value == PacketOpcodes.Opcodes.PrivateChatRsp)
                         yield HandleChat.onPrivateChatRsp(session, payload);
                     else if (opcode.value == PacketOpcodes.Opcodes.PullPrivateChatRsp)
                         yield HandleChat.onPullPrivateChatRsp(session, payload);
@@ -491,101 +491,101 @@ else:
         file.write(
             """package emu.protoshift.server.packet.injecter;
 
-    import emu.protoshift.ProtoShift;
+import emu.protoshift.ProtoShift;
 
-    import com.google.protobuf.InvalidProtocolBufferException;
-    import com.google.protobuf.util.JsonFormat;
+import com.google.protobuf.InvalidProtocolBufferException;
+import com.google.protobuf.util.JsonFormat;
 
-    import emu.protoshift.net.newproto.AbilityInvocationsNotifyOuterClass;
-    import emu.protoshift.net.newproto.AbilityInvokeEntryOuterClass;
-    import emu.protoshift.net.newproto.ClientAbilityChangeNotifyOuterClass;
+import emu.protoshift.net.newproto.AbilityInvocationsNotifyOuterClass;
+import emu.protoshift.net.newproto.AbilityInvokeEntryOuterClass;
+import emu.protoshift.net.newproto.ClientAbilityChangeNotifyOuterClass;
 
-    import java.util.List;
+import java.util.List;
 
-    public class HandleAbility {
-        private static void handleAbilityInvokes(List<AbilityInvokeEntryOuterClass.AbilityInvokeEntry.Builder> invokes) {
-            try {
-                for (var invoke : invokes) {
-                    switch (invoke.getArgumentType()) {"""
+public class HandleAbility {
+    private static void handleAbilityInvokes(List<AbilityInvokeEntryOuterClass.AbilityInvokeEntry.Builder> invokes) {
+        try {
+            for (var invoke : invokes) {
+                switch (invoke.getArgumentType()) {"""
             + generate_invoke_parameter(AbilityInvokeMap, "ability")
             + """
-                        default -> ProtoShift.getLogger().error("Unknown ability type: " + invoke.getArgumentType());
-                    }
+                    default -> ProtoShift.getLogger().error("Unknown ability type: " + invoke.getArgumentType());
                 }
-            } catch (Exception e) {
-                e.printStackTrace();
             }
-        }
-
-        public static byte[] onClientAbilityChangeNotify(byte[] payload) {
-            ProtoShift.getLogger().debug("ClientAbilityChangeNotify injected");
-            var req = ClientAbilityChangeNotifyOuterClass.ClientAbilityChangeNotify.newBuilder();
-            try {
-                req.mergeFrom(payload);
-                handleAbilityInvokes(req.getInvokesBuilderList());
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-            return req.build().toByteArray();
-        }
-
-        public static byte[] onAbilityInvocationsNotify(byte[] payload) {
-            ProtoShift.getLogger().debug("AbilityInvocationsNotify injected");
-            var req = AbilityInvocationsNotifyOuterClass.AbilityInvocationsNotify.newBuilder();
-            try {
-                req.mergeFrom(payload);
-                handleAbilityInvokes(req.getInvokesBuilderList());
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-            return req.build().toByteArray();
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
-    """
+
+    public static byte[] onClientAbilityChangeNotify(byte[] payload) {
+        ProtoShift.getLogger().debug("ClientAbilityChangeNotify injected");
+        var req = ClientAbilityChangeNotifyOuterClass.ClientAbilityChangeNotify.newBuilder();
+        try {
+            req.mergeFrom(payload);
+            handleAbilityInvokes(req.getInvokesBuilderList());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return req.build().toByteArray();
+    }
+
+    public static byte[] onAbilityInvocationsNotify(byte[] payload) {
+        ProtoShift.getLogger().debug("AbilityInvocationsNotify injected");
+        var req = AbilityInvocationsNotifyOuterClass.AbilityInvocationsNotify.newBuilder();
+        try {
+            req.mergeFrom(payload);
+            handleAbilityInvokes(req.getInvokesBuilderList());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return req.build().toByteArray();
+    }
+}
+"""
         )
 
     with open(OUTPUT_INJECTER_DIR + "HandleCombat.java", "w", encoding="utf-8") as file:
         file.write(
             """package emu.protoshift.server.packet.injecter;
 
-    import emu.protoshift.ProtoShift;
+import emu.protoshift.ProtoShift;
 
-    import com.google.protobuf.InvalidProtocolBufferException;
-    import com.google.protobuf.util.JsonFormat;
+import com.google.protobuf.InvalidProtocolBufferException;
+import com.google.protobuf.util.JsonFormat;
 
-    import emu.protoshift.net.newproto.CombatInvocationsNotifyOuterClass;
-    import emu.protoshift.net.newproto.CombatInvokeEntryOuterClass;
+import emu.protoshift.net.newproto.CombatInvocationsNotifyOuterClass;
+import emu.protoshift.net.newproto.CombatInvokeEntryOuterClass;
 
-    import java.util.List;
+import java.util.List;
 
-    public class HandleCombat {
-        private static void handleCombatInvokes(List<CombatInvokeEntryOuterClass.CombatInvokeEntry.Builder> invokes) {
-            try {
-                for (var invoke : invokes) {
-                    switch (invoke.getArgumentType()) {"""
+public class HandleCombat {
+    private static void handleCombatInvokes(List<CombatInvokeEntryOuterClass.CombatInvokeEntry.Builder> invokes) {
+        try {
+            for (var invoke : invokes) {
+                switch (invoke.getArgumentType()) {"""
             + generate_invoke_parameter(CombatTypeMap, "combat")
             + """
-                        default -> ProtoShift.getLogger().error("Unknown ability type: " + invoke.getArgumentType());
-                    }
+                    default -> ProtoShift.getLogger().error("Unknown ability type: " + invoke.getArgumentType());
                 }
-            } catch (Exception e) {
-                e.printStackTrace();
             }
-        }
-
-        public static byte[] onCombatInvocationsNotify(byte[] payload) {
-            ProtoShift.getLogger().debug("CombatInvocationsNotify injected");
-            var req = CombatInvocationsNotifyOuterClass.CombatInvocationsNotify.newBuilder();
-            try {
-                req.mergeFrom(payload);
-                handleCombatInvokes(req.getInvokeListBuilderList());
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-            return req.build().toByteArray();
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
-    """
+
+    public static byte[] onCombatInvocationsNotify(byte[] payload) {
+        ProtoShift.getLogger().debug("CombatInvocationsNotify injected");
+        var req = CombatInvocationsNotifyOuterClass.CombatInvocationsNotify.newBuilder();
+        try {
+            req.mergeFrom(payload);
+            handleCombatInvokes(req.getInvokeListBuilderList());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return req.build().toByteArray();
+    }
+}
+"""
         )
 
     with open(OUTPUT_PACKET_DIR + "PacketHandler.java", "w", encoding="utf-8") as file:
@@ -752,6 +752,9 @@ public class Handle {
                             HandleMap.onMarkMapReq(session, payload);
                     }
                 } else if (opcode.type == 2) {
+                if (opcode.value == PacketOpcodes.oldOpcodes.PlayerLoginRsp)
+                    yield HandleLogin.onPlayerLoginRsp(session, payload);
+
                     if (Configuration.CONSOLE.enabled) {
                         if (opcode.value == PacketOpcodes.oldOpcodes.PrivateChatRsp)
                             yield HandleChat.onPrivateChatRsp(session, payload);
@@ -969,13 +972,18 @@ with open(OUTPUT_INJECTER_DIR + "HandleLogin.java", "w", encoding="utf-8") as fi
         """package emu.protoshift.server.packet.injecter;
 
 import emu.protoshift.ProtoShift;
+import emu.protoshift.config.Configuration;
 """
         + (
             """import emu.protoshift.net.proto.GetPlayerTokenReqOuterClass;
-import emu.protoshift.net.proto.GetPlayerTokenRspOuterClass;"""
+import emu.protoshift.net.proto.GetPlayerTokenRspOuterClass;
+import emu.protoshift.net.proto.PlayerLoginRspOuterClass;
+import emu.protoshift.net.proto.ResVersionConfigOuterClass;"""
             if fast_forword_mode
             else """import emu.protoshift.net.newproto.GetPlayerTokenReqOuterClass;
-import emu.protoshift.net.oldproto.GetPlayerTokenRspOuterClass;"""
+import emu.protoshift.net.oldproto.GetPlayerTokenRspOuterClass;
+import emu.protoshift.net.oldproto.PlayerLoginRspOuterClass;
+import emu.protoshift.net.oldproto.ResVersionConfigOuterClass;"""
         )
         + """
 
@@ -1039,6 +1047,27 @@ public class HandleLogin {
                 // Set session state
                 session.setState(GameSession.SessionState.ACTIVE);
             }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return rsp.build().toByteArray();
+    }
+
+    public static byte[] onPlayerLoginRsp(GameSession session, byte[] payload) {
+        ProtoShift.getLogger().info("onPlayerLoginRsp injected");
+        if (!Configuration.GAME.disableVersionCheck)
+            return payload;
+        var rsp = PlayerLoginRspOuterClass.PlayerLoginRsp.newBuilder();
+        try {
+            rsp.mergeFrom(payload);
+
+            rsp.setClientDataVersion(0)
+                    .setClientSilenceDataVersion(0)
+                    .setClientMd5("")
+                    .setClientSilenceMd5("")
+                    .setResVersionConfig(ResVersionConfigOuterClass.ResVersionConfig.newBuilder())
+                    .setClientVersionSuffix("")
+                    .setClientSilenceVersionSuffix("");
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -1173,7 +1202,7 @@ public class HandleMap {
             var req = MarkMapReqOuterClass.MarkMapReq.parseFrom(payload);
             if (req.getMark().getPointType() == MapMarkPointTypeOuterClass.MapMarkPointType.MAP_MARK_POINT_TYPE_FISH_POOL) {
                 var Y = req.getMark().getName();
-                Console.exec(session.getUid(), "goto " + req.getMark().getPos().getX() + (Y.isEmpty() ? " 500 " : " " + Y + " ") + req.getMark().getPos().getZ());
+                Console.exec(session.getUid(), "goto " + req.getMark().getPos().getX() + (Y.equals("") ? " 500 " : " " + Y + " ") + req.getMark().getPos().getZ());
             }
         } catch (Exception e) {
             e.printStackTrace();
