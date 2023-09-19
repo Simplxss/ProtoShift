@@ -44,6 +44,11 @@ if exist ".\src\generated" rmdir /S /Q ".\src\generated"
 if not exist ".\src\generated" md ".\src\generated"
 
 if defined Direct (
+    .\tools\protoc\protoc.exe -I=".\proto\%NewVersion%\proto" --java_out=".\src\generated" ".\proto\%NewVersion%\proto\PlayerLoginRsp.proto"
+    .\tools\protoc\protoc.exe -I=".\proto\%NewVersion%\proto" --java_out=".\src\generated" ".\proto\%NewVersion%\proto\BlockInfo.proto"
+    .\tools\protoc\protoc.exe -I=".\proto\%NewVersion%\proto" --java_out=".\src\generated" ".\proto\%NewVersion%\proto\FeatureBlockInfo.proto"
+    .\tools\protoc\protoc.exe -I=".\proto\%NewVersion%\proto" --java_out=".\src\generated" ".\proto\%NewVersion%\proto\ResVersionConfig.proto"
+    .\tools\protoc\protoc.exe -I=".\proto\%NewVersion%\proto" --java_out=".\src\generated" ".\proto\%NewVersion%\proto\ShortAbilityHashPair.proto"
     .\tools\protoc\protoc.exe -I=".\proto\%NewVersion%\proto" --java_out=".\src\generated" ".\proto\%NewVersion%\proto\Birthday.proto"
     .\tools\protoc\protoc.exe -I=".\proto\%NewVersion%\proto" --java_out=".\src\generated" ".\proto\%NewVersion%\proto\ChatInfo.proto"
     .\tools\protoc\protoc.exe -I=".\proto\%NewVersion%\proto" --java_out=".\src\generated" ".\proto\%NewVersion%\proto\FriendBrief.proto"

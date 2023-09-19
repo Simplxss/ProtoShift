@@ -26,6 +26,7 @@ public class ConfigContainer {
         public String bindAddress = "0.0.0.0";
         public int bindPort = 22102;
         public int kcpInterval = 20;
+        public boolean disableVersionCheck = true;
     }
 
     public static class Console {
