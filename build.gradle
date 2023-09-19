@@ -44,11 +44,15 @@ dependencies {
 
     implementation group: 'io.netty', name: 'netty-all', version: '4.1.97.Final'
 
+    implementation group: 'io.javalin', name: 'javalin', version: '5.6.1'
+
     implementation group: 'com.google.code.gson', name: 'gson', version: '2.10.1'
     implementation group: 'com.google.protobuf', name: 'protobuf-java', version: '3.24.3'
     implementation group: 'com.google.protobuf', name: 'protobuf-java-util', version: '3.24.3'
 
     implementation group: 'org.reflections', name: 'reflections', version: '0.10.2'
+
+    implementation group: 'com.squareup.okhttp3', name: 'okhttp', version: '4.11.0'
 
     compileOnly group: 'org.projectlombok', name: 'lombok', version: '1.18.28'
     annotationProcessor group: 'org.projectlombok', name: 'lombok', version: '1.18.28'
