@@ -55,6 +55,7 @@ def generatePython(cmdid):
 if sys.argv[1] == sys.argv[2]:
     protopath = f"..\\..\\proto\\{sys.argv[1]}\\"
 
+    # id -> name
     cmdid1 = readCmdidCsv(f"{protopath}cmdid.csv")
     cmdid2 = readCmdidJson(f"{protopath}cmdid.json")
     cmdid3 = readPacketIdJson(f"{protopath}packetIds.json")

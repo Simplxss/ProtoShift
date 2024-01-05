@@ -141,10 +141,13 @@ public class GameSession {
 
         if (tunnel != null) {
             var data = packet.build();
-            switch (packet.getEncryptType()){
-                case NONE -> {}
-                case DISPATCH_KEY -> Crypto.xor(data, Crypto.DISPATCH_KEY);
-                case ENCRYPT_KEY -> Crypto.xor(data, encryptKey);
+
+            if (packet.getOpcode().type == 2) {
+                if (packet.getOpcode().value == 21228) {
+                    Crypto.xor(data, Crypto.DISPATCH_KEY);
+                } else {
+                    Crypto.xor(data, encryptKey);
+                }
             }
 
             switch (packet.getOpcode().type) {
